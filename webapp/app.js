@@ -2,15 +2,43 @@
 const tg = window.Telegram?.WebApp;
 tg?.ready(); tg?.expand();
 
+/* --- i18n ------------------------------------------------------------------ */
+let LANG = "en";
+let DICT = {};
+const LOCALE_MAP = { en: "en-US", uk: "uk-UA", ru: "ru-RU", pl: "pl-PL", es: "es-ES" };
+function tr(key, fallback){
+  if (DICT[key] != null) return DICT[key];
+  return fallback != null ? fallback : key;
+}
+function applyI18n(){
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const v = DICT[el.dataset.i18n];
+    if (v != null) el.textContent = v;
+  });
+  document.getElementById("remind-input").dataset.ph = tr("ph_reminder", "New reminder…");
+}
+async function setLang(lang){
+  LANG = lang;
+  try {
+    const res = await fetch(`/locales/${lang}.json`);
+    DICT = res.ok ? await res.json() : {};
+  } catch { DICT = {}; }
+  applyI18n();
+  if (document.getElementById("screen-list").classList.contains("active")) renderTabs();
+}
+
 const TABLES = {
-  plans:    { subs: ["in_progress", "done"], subNames: ["In progress", "Done"], ph: "New task…",
+  plans:    { subs: ["in_progress", "done"], phKey: "ph_task",
               chip: { in_progress: "doing", done: "done" } },
-  notes:    { subs: ["note", "idea"], subNames: ["Records", "Ideas"], ph: "New record…",
-              chip: {} },
-  meetings: { subs: ["upcoming", "past"], subNames: ["Upcoming", "Past"], ph: "New meeting…",
-              chip: {} },
-  reminders:{ subs: [], subNames: [], ph: "New reminder…", chip: {} },
+  notes:    { subs: ["note", "idea"], phKey: "ph_record", chip: {} },
+  meetings: { subs: ["upcoming", "past"], phKey: "ph_meeting", chip: {} },
+  reminders:{ subs: [], phKey: "ph_reminder", chip: {} },
 };
+const SUB_KEYS = {
+  in_progress: "sub_in_progress", done: "sub_done", note: "sub_note",
+  idea: "sub_idea", upcoming: "sub_upcoming", past: "sub_past",
+};
+function subLabel(sub){ return tr(SUB_KEYS[sub] || sub, (sub || "").replace(/_/g, " ")); }
 const TABLE_SCREEN = { plans: "list", notes: "list", meetings: "list", reminders: "reminders" };
 
 let current = { table: "plans", sub: "in_progress" };
@@ -33,39 +61,56 @@ async function api(path, options = {}){
 /* --- digest ------------------------------------------------------------ */
 async function loadDigest(){
   const d = new Date();
+  const loc = LOCALE_MAP[LANG] || "en-US";
   document.getElementById("hero-day").textContent =
-    d.toLocaleDateString("en-US", { weekday:"long" });
+    d.toLocaleDateString(loc, { weekday:"long" });
   document.getElementById("hero-date").textContent =
-    d.toLocaleDateString("en-US", { month:"long", day:"numeric" });
+    d.toLocaleDateString(loc, { month:"long", day:"numeric" });
   try {
-    const [plans, notes, meetings] = await Promise.all([
-      api("/api/plans"), api("/api/notes"), api("/api/meetings")]);
+    const [plans, notes, meetings, reminders] = await Promise.all([
+      api("/api/plans"), api("/api/notes"), api("/api/meetings"), api("/api/reminders")]);
     const doing = plans.filter(p => p.subsection === "in_progress");
     const done = plans.filter(p => p.subsection === "done");
+    const upcoming = meetings.filter(m => m.subsection !== "past");
     document.getElementById("hero-greet").textContent =
-      `${doing.length} task${doing.length === 1 ? "" : "s"} in progress` +
-      (meetings.length ? `, ${meetings.length} upcoming meeting${meetings.length === 1 ? "" : "s"}.` : ".");
+      (!doing.length && !upcoming.length)
+        ? tr("greet_empty", "Nothing planned yet — add by voice.")
+        : tr("greet_summary", `${doing.length} task(s) in progress, ${upcoming.length} upcoming meeting(s).`)
+            .replace("{t}", doing.length).replace("{m}", upcoming.length);
     const dp = document.getElementById("digest-plans");
     dp.innerHTML = doing.length
       ? doing.slice(0, 2).map(p => `<div>${escapeHtml(p.title || (p.text||"").slice(0,40))}</div>`).join("") +
-        `<div class="dim">In progress</div>`
-      : `<div class="dim">Nothing yet — add by voice</div>`;
+        `<div class="dim">${subLabel("in_progress")}</div>`
+      : `<div class="dim">${tr("greet_empty", "Nothing planned yet — add by voice.")}</div>`;
     document.getElementById("digest-plans-badges").innerHTML =
-      `<span class="badge doing">${doing.length} doing</span><span class="badge done">${done.length} done</span>`;
+      `<span class="badge doing">${doing.length} · ${subLabel("in_progress")}</span><span class="badge done">${done.length} · ${subLabel("done")}</span>`;
     const dr = document.getElementById("digest-records");
     dr.innerHTML = notes.length
       ? `<div>${escapeHtml(notes[0].title || (notes[0].text||"").slice(0,40))}</div>` +
-        `<div class="dim">Records · ${notes.length} total</div>`
-      : `<div class="dim">No records yet</div>`;
+        `<div class="dim">${subLabel("note")} · ${notes.length}</div>`
+      : `<div class="dim">${tr("no_reminders", "No reminders yet")}</div>`;
     const dm = document.getElementById("digest-meetings");
-    dm.innerHTML = meetings.length
-      ? meetings.slice(0, 3).map(m => `
+    dm.innerHTML = upcoming.length
+      ? upcoming.slice(0, 3).map(m => `
           <div class="meet-row">
             <div class="time">${m.datetime ? fmtDate(m.datetime).split(", ")[1] || "—" : "—"}</div>
             <div><div class="what">${escapeHtml(m.title || (m.text||"").slice(0,40))}</div>
                  <div class="who">${m.datetime ? escapeHtml(fmtDate(m.datetime)) : ""}</div></div>
           </div>`).join("")
-      : `<div class="meet-row"><div class="what" style="color:var(--muted)">No upcoming meetings</div></div>`;
+      : `<div class="meet-row"><div class="what" style="color:var(--muted)">${tr("no_reminders", "No reminders yet")}</div></div>`;
+    const drm = document.getElementById("digest-reminders");
+    const now = Date.now();
+    const nearest = reminders
+      .filter(r => r.datetime && new Date(r.datetime).getTime() >= now)
+      .sort((a, b) => new Date(a.datetime) - new Date(b.datetime)).slice(0, 3);
+    drm.innerHTML = nearest.length
+      ? nearest.map(r => `
+          <div class="meet-row">
+            <div class="time">${fmtDate(r.datetime).split(", ")[1] || "—"}</div>
+            <div><div class="what">${escapeHtml(r.title || (r.text||"").slice(0,40))}</div>
+                 <div class="who">${escapeHtml(fmtDate(r.datetime))}</div></div>
+          </div>`).join("")
+      : `<div class="meet-row"><div class="what" style="color:var(--muted)">${tr("no_reminders", "No reminders yet")}</div></div>`;
   } catch { /* unauthorized or offline */ }
 }
 
@@ -76,7 +121,7 @@ function openSection(table){
   const scr = TABLE_SCREEN[table];
   show(scr);
   if (scr === "list"){
-    document.getElementById("quick-input").dataset.ph = TABLES[table].ph;
+    document.getElementById("quick-input").dataset.ph = tr(TABLES[table].phKey);
     renderTabs();
   }
   renderList();
@@ -86,7 +131,7 @@ function renderTabs(){
   const t = TABLES[current.table];
   const tabs = document.getElementById("tabs");
   let html = t.subs.map((s, i) =>
-    `<div class="tab ${s === current.sub ? "active" : ""}" data-sub="${s}">${t.subNames[i]}</div>`).join("");
+    `<div class="tab ${s === current.sub ? "active" : ""}" data-sub="${s}">${subLabel(s)}</div>`).join("");
   if (current.table === "meetings")
     html += `<div class="tab" data-sub="__rem">Reminders</div>`;
   tabs.innerHTML = html;
@@ -105,14 +150,14 @@ async function renderList(){
   if (table !== "reminders" && current.sub) items = items.filter(i => i.subsection === current.sub);
   if (!items.length){
     container.innerHTML = `<div class="empty"><div class="wm">PLANNER</div>
-      <div class="sub">Nothing here yet.<br>Add by voice or with + button.</div></div>`;
+      <div class="sub">${tr("empty_hint", "Nothing here yet. Add by voice or with the + button.")}</div></div>`;
     return;
   }
   for (const item of items){
     const div = document.createElement("div");
     div.className = "item" + (item.subsection === "done" ? " done" : "");
     const chip = TABLES[table].chip[item.subsection]
-      ? `<span class="chip ${TABLES[table].chip[item.subsection]}">${TABLES[table].subNames[TABLES[table].subs.indexOf(item.subsection)]}</span>`
+      ? `<span class="chip ${TABLES[table].chip[item.subsection]}">${subLabel(item.subsection)}</span>`
       : "";
     const when = item.datetime ? fmtDate(item.datetime) :
       (item.created_at ? item.created_at.slice(0, 16).replace("T", " ") : "");
@@ -155,7 +200,7 @@ function openSheet(table, item = null){
   if (t.subs.length){
     label.style.display = "block";
     chips.innerHTML = t.subs.map((s, i) =>
-      `<span class="chip-opt ${item?.subsection === s ? "on" : ""}" data-sub="${s}">${t.subNames[i]}</span>`).join("");
+      `<span class="chip-opt ${item?.subsection === s ? "on" : ""}" data-sub="${s}">${subLabel(s)}</span>`).join("");
     if (!item?.subsection) chips.querySelector(".chip-opt")?.classList.add("on");
     chips.querySelectorAll(".chip-opt").forEach(c => c.addEventListener("click", () => {
       chips.querySelectorAll(".chip-opt").forEach(x => x.classList.remove("on"));
@@ -247,6 +292,7 @@ function applyTheme(mode){
 async function loadSettings(){
   try {
     me = await api("/api/settings");
+    if (me.language && me.language !== LANG) await setLang(me.language);
     document.getElementById("uname").textContent = me.first_name || "User";
     document.getElementById("uhandle").textContent = me.username ? "@" + me.username : "";
     document.getElementById("avatar").textContent = (me.first_name || "U")[0].toUpperCase();
@@ -261,7 +307,8 @@ document.getElementById("row-language").addEventListener("click", () =>
   document.getElementById("lang-pills").classList.toggle("hidden"));
 document.querySelectorAll(".lang").forEach(l => l.addEventListener("click", async () => {
   await api("/api/settings", { method: "PUT", body: JSON.stringify({ language: l.dataset.l }) }).catch(()=>{});
-  loadSettings();
+  await setLang(l.dataset.l);
+  loadDigest();
 }));
 document.querySelectorAll(".theme-opt").forEach(t => t.addEventListener("click", async () => {
   await api("/api/settings", { method: "PUT", body: JSON.stringify({ theme: t.dataset.t }) }).catch(()=>{});
@@ -332,6 +379,7 @@ document.getElementById("row-admin").addEventListener("click", () => { loadAdmin
 
 /* --- init ------------------------------------------------------------------ */
 applyTheme("dark");
+setLang("en");
 loadDigest();
 loadSettings();
 

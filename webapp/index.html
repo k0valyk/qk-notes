@@ -29,19 +29,28 @@
         <div class="mini-list" id="digest-plans"></div>
         <div class="badge-row" id="digest-plans-badges"></div>
       </div>
+      <div class="card" data-open="plans">
+        <div class="label" data-i18n="nav_plans">Plans</div>
+        <div class="mini-list" id="digest-plans"></div>
+        <div class="badge-row" id="digest-plans-badges"></div>
+      </div>
       <div class="card" data-open="notes">
-        <div class="label">Records</div>
+        <div class="label" data-i18n="nav_records">Records</div>
         <div class="mini-list" id="digest-records"></div>
-        <div class="badge-row"><span class="badge doing">Records</span><span class="badge done">Ideas</span></div>
+        <div class="badge-row"><span class="badge doing" data-i18n="nav_records">Records</span><span class="badge done" data-i18n="sub_idea">Ideas</span></div>
       </div>
     </div>
     <div class="wide-card" data-open="meetings">
-      <div class="label">Meetings — Upcoming</div>
+      <div class="label" data-i18n="meetings_upcoming">Meetings — Upcoming</div>
       <div id="digest-meetings"></div>
+    </div>
+    <div class="wide-card" data-open="reminders">
+      <div class="label" data-i18n="reminder_nearest">Reminders — Nearest</div>
+      <div id="digest-reminders"></div>
     </div>
     <div class="promo" id="qa-promo">
       <div class="icon">✦</div>
-      <div><div class="t1">Add by voice</div><div class="t2">Send a voice note to the bot or use the iOS Shortcut</div></div>
+      <div><div class="t1" data-i18n="add_by_voice">Add by voice</div><div class="t2" data-i18n="add_by_voice_sub">Send a voice note to the bot or use the iOS Shortcut</div></div>
     </div>
   </div>
 
@@ -67,7 +76,7 @@
       </div>
     </div>
     <div class="set-block">
-      <div class="set-row" id="row-language"><div class="lab">Language</div><div class="val" id="lang-val">English ›</div></div>
+      <div class="set-row" id="row-language"><div class="lab" data-i18n="label_language">Language</div><div class="val" id="lang-val">English ›</div></div>
       <div class="lang-pills hidden" id="lang-pills">
         <span class="lang" data-l="en">English</span>
         <span class="lang" data-l="uk">Українська</span>
@@ -77,38 +86,38 @@
       </div>
     </div>
     <div class="set-block">
-      <div class="set-row"><div class="lab">Theme</div></div>
+      <div class="set-row"><div class="lab" data-i18n="label_theme">Theme</div></div>
       <div class="theme-row">
-        <div class="theme-opt dark" data-t="dark">Dark</div>
-        <div class="theme-opt light" data-t="light">Light</div>
+        <div class="theme-opt dark" data-t="dark" data-i18n="theme_dark">Dark</div>
+        <div class="theme-opt light" data-t="light" data-i18n="theme_light">Light</div>
       </div>
     </div>
     <div class="set-block">
-      <div class="set-row"><div class="lab">Voice add via Shortcuts</div><div class="toggle" id="qa-toggle"><div class="knob"></div></div></div>
+      <div class="set-row"><div class="lab" data-i18n="qa_shortcuts">Voice add via Shortcuts</div><div class="toggle" id="qa-toggle"><div class="knob"></div></div></div>
       <div class="qa-block hidden" id="qa-block">
         <div class="qa-url" id="qa-url"></div>
         <div class="chip-row" style="padding:0 16px 14px;">
-          <span class="chip-opt" id="qa-copy">Copy URL</span>
-          <span class="chip-opt" id="qa-refresh">New token</span>
+          <span class="chip-opt" id="qa-copy" data-i18n="btn_copy">Copy URL</span>
+          <span class="chip-opt" id="qa-refresh" data-i18n="btn_refresh_token">New token</span>
         </div>
       </div>
     </div>
     <div class="set-block" id="admin-block" style="display:none;">
-      <div class="set-row" id="row-admin"><div class="lab">Admin panel</div><div class="val">›</div></div>
+      <div class="set-row" id="row-admin"><div class="lab" data-i18n="nav_admin">Admin panel</div><div class="val">›</div></div>
     </div>
   </div>
 
   <!-- ADMIN -->
   <div class="content screen" id="screen-admin">
-    <div class="set-block"><div class="set-row"><div class="lab">Stats</div></div><div id="admin-stats" class="admin-list"></div></div>
-    <div class="set-block"><div class="set-row"><div class="lab">Users</div></div><div id="admin-users" class="admin-list"></div></div>
-    <div class="set-block"><div class="set-row"><div class="lab">Broadcast</div></div>
+    <div class="set-block"><div class="set-row"><div class="lab" data-i18n="admin_stats">Stats</div></div><div id="admin-stats" class="admin-list"></div></div>
+    <div class="set-block"><div class="set-row"><div class="lab" data-i18n="admin_users">Users</div></div><div id="admin-users" class="admin-list"></div></div>
+    <div class="set-block"><div class="set-row"><div class="lab" data-i18n="admin_broadcast">Broadcast</div></div>
       <div style="padding:12px 16px;">
         <textarea id="broadcast-text" rows="2" class="sheet-field" style="width:100%;"></textarea>
-        <div class="chip-row" style="margin-top:8px;"><span class="chip-opt on" id="broadcast-send">Send</span></div>
+        <div class="chip-row" style="margin-top:8px;"><span class="chip-opt on" id="broadcast-send" data-i18n="btn_send">Send</span></div>
       </div>
     </div>
-    <div class="set-block"><div class="set-row"><div class="lab">Recent logs</div></div><div id="admin-logs" class="admin-list"></div></div>
+    <div class="set-block"><div class="set-row"><div class="lab" data-i18n="admin_logs">Recent logs</div></div><div id="admin-logs" class="admin-list"></div></div>
   </div>
 
   <div class="fab">+</div>
@@ -117,27 +126,27 @@
   <div class="sheet-overlay hidden" id="sheet-overlay">
     <div class="sheet">
       <div class="handle"></div>
-      <div class="field-label">Text</div>
+      <div class="field-label" data-i18n="label_text">Text</div>
       <div class="sheet-field multiline" id="sheet-text" contenteditable="true"></div>
-      <div class="field-label" id="sheet-sub-label">Section</div>
+      <div class="field-label" id="sheet-sub-label" data-i18n="label_subsection">Section</div>
       <div class="chip-row" id="sheet-chips"></div>
-      <div class="field-label">Date &amp; time</div>
+      <div class="field-label" data-i18n="label_datetime">Date &amp; time</div>
       <input type="datetime-local" id="sheet-datetime" class="sheet-field">
       <div class="actions">
-        <div class="btn cancel" id="sheet-cancel">Cancel</div>
+        <div class="btn cancel" id="sheet-cancel" data-i18n="btn_cancel">Cancel</div>
         <div class="btn del" id="sheet-del">🗑</div>
-        <div class="btn save" id="sheet-save">Save</div>
+        <div class="btn save" id="sheet-save" data-i18n="btn_save">Save</div>
       </div>
     </div>
   </div>
 
   <div class="bottomnav">
-    <div class="navitem" data-nav="digest"><div class="ic">☀</div><div class="lb">Digest</div></div>
-    <div class="navitem" data-nav="plans"><div class="ic">☑</div><div class="lb">Plans</div></div>
-    <div class="navitem" data-nav="records"><div class="ic">✎</div><div class="lb">Records</div></div>
-    <div class="navitem" data-nav="meetings"><div class="ic">◷</div><div class="lb">Meetings</div></div>
-    <div class="navitem" data-nav="reminders"><div class="ic">⏰</div><div class="lb">Reminders</div></div>
-    <div class="navitem" data-nav="settings"><div class="ic">⚙</div><div class="lb">Settings</div></div>
+    <div class="navitem" data-nav="digest"><div class="ic">☀</div><div class="lb" data-i18n="nav_digest">Digest</div></div>
+    <div class="navitem" data-nav="plans"><div class="ic">☑</div><div class="lb" data-i18n="nav_plans">Plans</div></div>
+    <div class="navitem" data-nav="records"><div class="ic">✎</div><div class="lb" data-i18n="nav_records">Records</div></div>
+    <div class="navitem" data-nav="meetings"><div class="ic">◷</div><div class="lb" data-i18n="nav_meetings">Meetings</div></div>
+    <div class="navitem" data-nav="reminders"><div class="ic">⏰</div><div class="lb" data-i18n="nav_reminders">Reminders</div></div>
+    <div class="navitem" data-nav="settings"><div class="ic">⚙</div><div class="lb" data-i18n="nav_settings">Settings</div></div>
   </div>
 </div>
   <script src="/webapp/app.js"></script>
