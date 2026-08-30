@@ -190,6 +190,7 @@ document.getElementById("sheet-save").addEventListener("click", async () => {
   } catch (e) { tg?.showAlert?.("Save failed: " + e.message); }
 });
 
+document.getElementById("sheet-cancel").addEventListener("click", closeSheet);
 document.getElementById("sheet-del").addEventListener("click", async () => {
   if (!editing?.item) return;
   try {
@@ -345,8 +346,8 @@ function show(name){
   document.getElementById(`screen-${name}`).classList.add("active");
   document.querySelectorAll(".navitem").forEach(n =>
     n.classList.toggle("active", n.dataset.nav === name ||
-      (name === "reminders" && n.dataset.nav === "meetings") ||
-      (name === "list" && n.dataset.nav === (current.table === "notes" ? "records" : "plans"))));
+      (name === "reminders" && n.dataset.nav === "reminders") ||
+      (name === "list" && n.dataset.nav === (current.table === "notes" ? "records" : current.table === "meetings" ? "meetings" : current.table === "reminders" ? "reminders" : "plans"))));
   const onList = ["list","reminders"].includes(name);
   document.querySelector(".fab").style.display = onList ? "flex" : (name === "digest" ? "flex" : "none");
   document.querySelector(".mic").style.display = name === "digest" ? "flex" : "none";
@@ -360,6 +361,7 @@ document.querySelectorAll(".navitem").forEach(n =>
     if (nav === "records") openSection("notes");
     else if (nav === "plans") openSection("plans");
     else if (nav === "meetings") openSection("meetings");
+    else if (nav === "reminders") openSection("reminders");
     else show(nav);
   }));
 document.getElementById("back-btn").addEventListener("click", () => show("digest"));
