@@ -25,14 +25,19 @@ class Settings:
 
     # Production host for the Mini App. Telegram only shows WebApp buttons for
     # public HTTPS URLs, so we ignore any non-HTTPS / localhost value.
-    _PROD_WEBAPP = "https://qk-notes-production.up.railway.app"
+    _PROD_WEBAPP = "https://qk-notes-production.up.railway.app/webapp/"
 
     @property
     def webapp_url(self) -> str:
         raw = os.getenv("WEBAPP_URL", self._PROD_WEBAPP)
         if not raw or not raw.startswith("https://") or "localhost" in raw:
             return self._PROD_WEBAPP
-        return raw.rstrip("/")
+        raw = raw.rstrip("/")
+        if raw.endswith("/webapp"):
+            return raw + "/"
+        if "/webapp/" not in raw and not raw.endswith("/webapp/index.html"):
+            return raw + "/webapp/"
+        return raw.rstrip("/") + "/"
 
     def validate(self) -> None:
         missing = []

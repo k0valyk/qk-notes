@@ -17,9 +17,10 @@ router = APIRouter(prefix="/api/quick-action", tags=["quick-action"])
 @router.get("/token")
 async def get_token(user: dict = Depends(get_current_user)):
     token = await create_quick_action_token(user["id"])
+    base = settings.webapp_url.replace("/webapp/", "").replace("/webapp", "")
     return {
         "token": token,
-        "url": f"{settings.webapp_url}/api/quick-action?token={token}",
+        "url": f"{base.rstrip('/')}/api/quick-action?token={token}",
     }
 
 
