@@ -83,5 +83,15 @@
   "no_meetings": "No hay reuniones próximas",
   "tab_nearest": "Más cercanos",
   "qa_instructions": "Conexión en iPhone (Botón de acción / Toque trasero)",
-  "backtap_guide_short": "Toque trasero (2 o 3 toques)"
+  "backtap_guide_short": "Toque trasero (2 o 3 toques)",
+  "no_records": "Aún no hay notas",
+  "err_save": "Error al guardar",
+  "err_add": "Error al añadir",
+  "err_delete": "Error al eliminar",
+  "err_broadcast": "Error en la difusión",
+  "not_authorized": "Sin autorización",
+  "admin_denied": "Acceso solo para administradores",
+  "mic_hint": "Mantén pulsado 🎙 en el chat con el bot para añadir por voz.\nO configura el atajo de iOS en Ajustes → Añadir por voz con Shortcuts.",
+  "sent_msg": "Enviado: {s}, fallidos: {f}",
+  "open_shortcuts": "Abrir la app Atajos"
 }

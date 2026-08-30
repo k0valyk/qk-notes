@@ -83,5 +83,15 @@
   "no_meetings": "Brak nadchodzących spotkań",
   "tab_nearest": "Najbliższe",
   "qa_instructions": "Połączenie na iPhonie (Przycisk akcji / Stuknięcie w tył)",
-  "backtap_guide_short": "Stuknięcie w tył (2 lub 3 razy)"
+  "backtap_guide_short": "Stuknięcie w tył (2 lub 3 razy)",
+  "no_records": "Jeszcze brak notatek",
+  "err_save": "Nie udało się zapisać",
+  "err_add": "Nie udało się dodać",
+  "err_delete": "Nie udało się usunąć",
+  "err_broadcast": "Rozsyłka nie udała się",
+  "not_authorized": "Brak dostępu",
+  "admin_denied": "Dostęp tylko dla administratora",
+  "mic_hint": "Przytrzymaj 🎙 na czacie z botem, aby dodać głosem.\nAlbo skonfiguruj skrót iOS w Ustawieniach → Dodawanie głosowe przez Shortcuts.",
+  "sent_msg": "Wysłano: {s}, błędy: {f}",
+  "open_shortcuts": "Otwórz aplikację Shortcuts"
 }

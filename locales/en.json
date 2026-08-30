@@ -83,5 +83,15 @@
   "no_meetings": "No upcoming meetings",
   "tab_nearest": "Nearest",
   "qa_instructions": "Connect on iPhone (Action Button / Back Tap)",
-  "backtap_guide_short": "Back Tap (2 or 3 taps)"
+  "backtap_guide_short": "Back Tap (2 or 3 taps)",
+  "no_records": "No records yet",
+  "err_save": "Save failed",
+  "err_add": "Add failed",
+  "err_delete": "Delete failed",
+  "err_broadcast": "Broadcast failed",
+  "not_authorized": "Not authorized",
+  "admin_denied": "Admin access denied",
+  "mic_hint": "Press and hold 🎙 in the chat with the bot to add by voice.\nOr set up the iOS Shortcut in Settings → Voice add via Shortcuts.",
+  "sent_msg": "Sent: {s}, failed: {f}",
+  "open_shortcuts": "Open Shortcuts app"
 }

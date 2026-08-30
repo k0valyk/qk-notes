@@ -88,7 +88,7 @@ async function loadDigest(){
     dr.innerHTML = notes.length
       ? `<div>${escapeHtml(notes[0].title || (notes[0].text||"").slice(0,40))}</div>` +
         `<div class="dim">${subLabel("note")} · ${notes.length}</div>`
-      : `<div class="dim">${tr("no_reminders", "No reminders yet")}</div>`;
+      : `<div class="dim">${tr("no_records", "No records yet")}</div>`;
     const dm = document.getElementById("digest-meetings");
     dm.innerHTML = upcoming.length
       ? upcoming.slice(0, 3).map(m => `
@@ -229,7 +229,7 @@ document.getElementById("sheet-save").addEventListener("click", async () => {
     if (["list","reminders"].includes(TABLE_SCREEN[table] || "list") &&
         document.querySelector(".screen.active").id === `screen-${TABLE_SCREEN[table]}`) renderList();
     loadDigest();
-  } catch (e) { tg?.showAlert?.("Save failed: " + e.message); }
+  } catch (e) { tg?.showAlert?.(tr("err_save", "Save failed") + ": " + e.message); }
 });
 
 document.getElementById("sheet-cancel").addEventListener("click", closeSheet);
@@ -238,7 +238,7 @@ document.getElementById("sheet-del").addEventListener("click", async () => {
   try {
     await api(`/api/${editing.table}/${editing.item.id}`, { method: "DELETE" });
     closeSheet(); renderList(); loadDigest();
-  } catch (e) { tg?.showAlert?.("Delete failed: " + e.message); }
+  } catch (e) { tg?.showAlert?.(tr("err_delete", "Delete failed")); }
 });
 document.getElementById("sheet-overlay").addEventListener("click", e => {
   if (e.target.id === "sheet-overlay") closeSheet();
@@ -255,7 +255,7 @@ document.getElementById("quick-input").addEventListener("keydown", async e => {
         body: JSON.stringify({ text, subsection: current.sub, datetime: null }) });
       e.target.textContent = "";
       renderList();
-    } catch (err) { tg?.showAlert?.("Add failed: " + err.message); }
+    } catch (err) { tg?.showAlert?.(tr("err_add", "Add failed")); }
   }
 });
 document.getElementById("remind-input").addEventListener("keydown", async e => {
@@ -268,7 +268,7 @@ document.getElementById("remind-input").addEventListener("keydown", async e => {
         body: JSON.stringify({ text, datetime: new Date(Date.now() + 3600000).toISOString().slice(0,19) }) });
       e.target.textContent = "";
       renderList();
-    } catch (err) { tg?.showAlert?.("Add failed: " + err.message); }
+    } catch (err) { tg?.showAlert?.(tr("err_add", "Add failed")); }
   }
 });
 document.querySelector(".fab").addEventListener("click", () => {
@@ -277,7 +277,7 @@ document.querySelector(".fab").addEventListener("click", () => {
 });
 document.querySelector(".mic").addEventListener("click", () => {
   tg?.HapticFeedback?.notificationOccurred("warning");
-  tg?.showAlert?.("Press and hold 🎙 in the chat with the bot to add by voice.\nOr set up the iOS Shortcut in Settings → Voice add via Shortcuts.");
+  tg?.showAlert?.(tr("mic_hint", "Press and hold 🎙 in the chat with the bot to add by voice."));
 });
 
 /* --- settings ------------------------------------------------------------ */
@@ -323,7 +323,7 @@ document.getElementById("qa-toggle").addEventListener("click", async () => {
       document.getElementById("qa-url").textContent = qa.url;
       block.classList.remove("hidden");
       tog.classList.remove("off");
-    } catch { tg?.showAlert?.("Not authorized"); }
+    } catch { tg?.showAlert?.(tr("not_authorized", "Not authorized")); }
   } else { block.classList.add("hidden"); tog.classList.add("off"); }
 });
 document.getElementById("qa-copy").addEventListener("click", () => {
@@ -336,6 +336,9 @@ document.getElementById("qa-refresh").addEventListener("click", async () => {
     const qa = await api("/api/quick-action/token");
     document.getElementById("qa-url").textContent = qa.url;
   } catch { /* ignore */ }
+});
+document.getElementById("qa-open").addEventListener("click", () => {
+  window.location.href = "shortcuts://create-shortcut";
 });
 
 /* --- admin ---------------------------------------------------------------- */
@@ -355,7 +358,7 @@ async function loadAdmin(){
     document.getElementById("admin-logs").innerHTML = logs.map(l =>
       `<div class="row"><span>${escapeHtml(l.event_type)} · ${escapeHtml(l.status)}</span>
        <span class="dim">${escapeHtml(l.timestamp || "")}</span></div>`).join("") || "<div class='dim'>No logs</div>";
-  } catch { tg?.showAlert?.("Admin access denied"); }
+  } catch { tg?.showAlert?.(tr("admin_denied", "Admin access denied")); }
 }
 async function toggleBlock(uid){
   try {
@@ -371,8 +374,8 @@ document.getElementById("broadcast-send").addEventListener("click", async () => 
   if (!text) return;
   try {
     const res = await api("/api/admin/broadcast", { method: "POST", body: JSON.stringify({ message: text }) });
-    tg?.showAlert?.(`Sent: ${res.sent}, failed: ${res.failed}`);
-  } catch (e) { tg?.showAlert?.("Broadcast failed: " + e.message); }
+    tg?.showAlert?.(tr("sent_msg", "Sent: {s}, failed: {f}").replace("{s}", res.sent).replace("{f}", res.failed));
+  } catch (e) { tg?.showAlert?.(tr("err_broadcast", "Broadcast failed")); }
 });
 document.getElementById("row-admin").addEventListener("click", () => { loadAdmin(); show("admin"); });
 
