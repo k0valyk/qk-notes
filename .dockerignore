@@ -1,0 +1,15 @@
+.git
+.gitignore
+.env
+venv
+.venv
+__pycache__
+*.pyc
+data
+tools
+*.db
+*.log
+.DS_Store
+_test*.py
+_*.py
+_*.txt
