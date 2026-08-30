@@ -16,6 +16,7 @@ COPY . .
 RUN mkdir -p /app/data
 
 ENV PORT=8000
+ENV WEBAPP_URL=https://qk-notes-production.up.railway.app
 EXPOSE 8000
 
 CMD ["sh", "-c", "python run.py"]
