@@ -130,13 +130,10 @@ function openSection(table){
 function renderTabs(){
   const t = TABLES[current.table];
   const tabs = document.getElementById("tabs");
-  let html = t.subs.map((s, i) =>
+  const html = t.subs.map((s, i) =>
     `<div class="tab ${s === current.sub ? "active" : ""}" data-sub="${s}">${subLabel(s)}</div>`).join("");
-  if (current.table === "meetings")
-    html += `<div class="tab" data-sub="__rem">Reminders</div>`;
   tabs.innerHTML = html;
   tabs.querySelectorAll(".tab").forEach(el => el.addEventListener("click", () => {
-    if (el.dataset.sub === "__rem") { openSection("reminders"); return; }
     current.sub = el.dataset.sub; renderTabs(); renderList();
   }));
 }
