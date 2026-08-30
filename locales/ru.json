@@ -77,5 +77,11 @@
   "ph_meeting": "Новая встреча…",
   "ph_reminder": "Новое напоминание…",
   "theme_dark": "Тёмная",
-  "theme_light": "Светлая"
+  "theme_light": "Светлая",
+  "btn_close": "Закрыть",
+  "btn_back": "‹ Назад",
+  "no_meetings": "Нет предстоящих встреч",
+  "tab_nearest": "Ближайшие",
+  "qa_instructions": "Подключение на iPhone (Кнопка действия / Тап по корпусу)",
+  "backtap_guide_short": "Тап по корпусу (2 или 3 тапа)"
 }

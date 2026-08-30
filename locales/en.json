@@ -77,5 +77,11 @@
   "ph_meeting": "New meeting…",
   "ph_reminder": "New reminder…",
   "theme_dark": "Dark",
-  "theme_light": "Light"
+  "theme_light": "Light",
+  "btn_close": "Close",
+  "btn_back": "‹ Back",
+  "no_meetings": "No upcoming meetings",
+  "tab_nearest": "Nearest",
+  "qa_instructions": "Connect on iPhone (Action Button / Back Tap)",
+  "backtap_guide_short": "Back Tap (2 or 3 taps)"
 }

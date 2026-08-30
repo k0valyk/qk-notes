@@ -77,5 +77,11 @@
   "ph_meeting": "Nowe spotkanie…",
   "ph_reminder": "Nowe przypomnienie…",
   "theme_dark": "Ciemny",
-  "theme_light": "Jasny"
+  "theme_light": "Jasny",
+  "btn_close": "Zamknij",
+  "btn_back": "‹ Wróć",
+  "no_meetings": "Brak nadchodzących spotkań",
+  "tab_nearest": "Najbliższe",
+  "qa_instructions": "Połączenie na iPhonie (Przycisk akcji / Stuknięcie w tył)",
+  "backtap_guide_short": "Stuknięcie w tył (2 lub 3 razy)"
 }

@@ -79,7 +79,7 @@ async function loadDigest(){
             .replace("{t}", doing.length).replace("{m}", upcoming.length);
     const dp = document.getElementById("digest-plans");
     dp.innerHTML = doing.length
-      ? doing.slice(0, 2).map(p => `<div>${escapeHtml(p.title || (p.text||"").slice(0,40))}</div>`).join("") +
+      ? doing.slice(0, 1).map(p => `<div>${escapeHtml(p.title || (p.text||"").slice(0,40))}</div>`).join("") +
         `<div class="dim">${subLabel("in_progress")}</div>`
       : `<div class="dim">${tr("greet_empty", "Nothing planned yet — add by voice.")}</div>`;
     document.getElementById("digest-plans-badges").innerHTML =
@@ -97,7 +97,7 @@ async function loadDigest(){
             <div><div class="what">${escapeHtml(m.title || (m.text||"").slice(0,40))}</div>
                  <div class="who">${m.datetime ? escapeHtml(fmtDate(m.datetime)) : ""}</div></div>
           </div>`).join("")
-      : `<div class="meet-row"><div class="what" style="color:var(--muted)">${tr("no_reminders", "No reminders yet")}</div></div>`;
+      : `<div class="meet-row"><div class="what" style="color:var(--muted)">${tr("no_meetings", "No upcoming meetings")}</div></div>`;
     const drm = document.getElementById("digest-reminders");
     const now = Date.now();
     const nearest = reminders
@@ -305,6 +305,8 @@ document.getElementById("row-language").addEventListener("click", () =>
 document.querySelectorAll(".lang").forEach(l => l.addEventListener("click", async () => {
   await api("/api/settings", { method: "PUT", body: JSON.stringify({ language: l.dataset.l }) }).catch(()=>{});
   await setLang(l.dataset.l);
+  document.querySelectorAll(".lang").forEach(x => x.classList.toggle("active", x.dataset.l === l.dataset.l));
+  document.getElementById("lang-val").textContent = langName(l.dataset.l) + " ›";
   loadDigest();
 }));
 document.querySelectorAll(".theme-opt").forEach(t => t.addEventListener("click", async () => {
@@ -380,6 +382,35 @@ setLang("en");
 loadDigest();
 loadSettings();
 
+/* hide floating buttons while scrolling */
+let floatTimer = null;
+document.querySelectorAll(".screen").forEach(scr => {
+  scr.addEventListener("scroll", () => {
+    document.querySelector(".fab").classList.add("float-hide");
+    document.querySelector(".mic").classList.add("float-hide");
+    clearTimeout(floatTimer);
+    floatTimer = setTimeout(() => {
+      document.querySelector(".fab").classList.remove("float-hide");
+      document.querySelector(".mic").classList.remove("float-hide");
+    }, 600);
+  }, { passive: true });
+});
+
+/* quick-action setup guides */
+function guideText(key, fallback){ return tr(key, fallback).replace(/\\n/g, "\n"); }
+document.getElementById("qa-guide-ab").addEventListener("click", () => {
+  const t = document.getElementById("qa-guide-ab-text");
+  if (!t.textContent) t.textContent = guideText("actionbutton_guide",
+    "Action Button setup (iPhone 15+):\n1. Open Settings → Action Button.\n2. Choose the \"Shortcut\" action.\n3. Pick the QK NOTES shortcut.\n4. Now pressing the Action Button starts voice capture and sends it to the bot.");
+  t.classList.toggle("hidden");
+});
+document.getElementById("qa-guide-bt").addEventListener("click", () => {
+  const t = document.getElementById("qa-guide-bt-text");
+  if (!t.textContent) t.textContent = guideText("backtap_guide",
+    "Back Tap setup (iPhone):\n1. Open Settings → Accessibility → Touch → Back Tap.\n2. Choose Double Tap or Triple Tap.\n3. Pick the QK NOTES shortcut.\n4. Now double/triple tapping the back of your phone starts voice capture and sends it to the bot.");
+  t.classList.toggle("hidden");
+});
+
 
 
 
@@ -396,7 +427,7 @@ function show(name){
   const onList = ["list","reminders"].includes(name);
   document.querySelector(".fab").style.display = onList ? "flex" : (name === "digest" ? "flex" : "none");
   document.querySelector(".mic").style.display = name === "digest" ? "flex" : "none";
-  document.getElementById("back-btn").textContent = name === "digest" ? "Close" : "‹ Back";
+  document.getElementById("back-btn").textContent = name === "digest" ? tr("btn_close", "Close") : tr("btn_back", "‹ Back");
   if (name === "digest") loadDigest();
 }
 
@@ -409,7 +440,10 @@ document.querySelectorAll(".navitem").forEach(n =>
     else if (nav === "reminders") openSection("reminders");
     else show(nav);
   }));
-document.getElementById("back-btn").addEventListener("click", () => show("digest"));
+document.getElementById("back-btn").addEventListener("click", () => {
+  if (document.querySelector(".screen.active").id === "screen-digest") tg?.close?.();
+  else show("digest");
+});
 document.getElementById("dots-btn").addEventListener("click", () => show("settings"));
 document.querySelectorAll(".card[data-open], .wide-card[data-open]").forEach(el =>
   el.addEventListener("click", () => openSection(el.dataset.open)));

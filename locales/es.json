@@ -77,5 +77,11 @@
   "ph_meeting": "Nueva reunión…",
   "ph_reminder": "Nuevo recordatorio…",
   "theme_dark": "Oscuro",
-  "theme_light": "Claro"
+  "theme_light": "Claro",
+  "btn_close": "Cerrar",
+  "btn_back": "‹ Atrás",
+  "no_meetings": "No hay reuniones próximas",
+  "tab_nearest": "Más cercanos",
+  "qa_instructions": "Conexión en iPhone (Botón de acción / Toque trasero)",
+  "backtap_guide_short": "Toque trasero (2 o 3 toques)"
 }
