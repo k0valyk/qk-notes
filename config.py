@@ -20,7 +20,9 @@ class Settings:
         "CLASSIFICATION_MODEL",
         "openai/gpt-oss-120b",
     )
-    webapp_url: str = os.getenv("WEBAPP_URL", "http://localhost:8000")
+    webapp_url: str = os.getenv(
+        "WEBAPP_URL", "https://qk-notes-production.up.railway.app"
+    )
     default_timezone: str = os.getenv("DEFAULT_TIMEZONE", "Europe/Kyiv")
     database_path: str = os.getenv("DATABASE_PATH", "data/qk_notes.db")
 
