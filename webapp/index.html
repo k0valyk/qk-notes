@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>PLANNER — Mini App</title>
-<link rel="stylesheet" href="/webapp/style.css?v=2">
+<link rel="stylesheet" href="/webapp/style.css?v=3">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -56,14 +56,14 @@
 
   <!-- LIST SCREEN (plans / records / meetings) -->
   <div class="content screen" id="screen-list">
-    <div class="input-field" id="quick-input" contenteditable="true" data-ph="New item…"></div>
+    <input type="text" id="quick-input" class="input-field" placeholder="New item…" autocomplete="off">
     <div class="tabs" id="tabs"></div>
     <div id="list-items"></div>
   </div>
 
   <!-- REMINDERS -->
   <div class="content screen" id="screen-reminders">
-    <div class="input-field" id="remind-input" contenteditable="true" data-ph="New reminder…"></div>
+    <input type="text" id="remind-input" class="input-field" placeholder="New reminder…" autocomplete="off">
     <div class="tabs"><div class="tab active" data-i18n="tab_nearest">Nearest</div></div>
     <div id="remind-items"></div>
   </div>
@@ -132,7 +132,7 @@
     <div class="sheet">
       <div class="handle"></div>
       <div class="field-label" data-i18n="label_text">Text</div>
-      <div class="sheet-field multiline" id="sheet-text" contenteditable="true"></div>
+      <textarea id="sheet-text" class="sheet-field multiline" rows="4"></textarea>
       <div class="field-label" id="sheet-sub-label" data-i18n="label_subsection">Section</div>
       <div class="chip-row" id="sheet-chips"></div>
       <div class="field-label" data-i18n="label_datetime">Date &amp; time</div>
@@ -154,6 +154,6 @@
     <div class="navitem" data-nav="settings"><div class="ic">⚙</div><div class="lb" data-i18n="nav_settings">Settings</div></div>
   </div>
 </div>
-  <script src="/webapp/app.js?v=2"></script>
+  <script src="/webapp/app.js?v=3"></script>
 </body>
 </html>

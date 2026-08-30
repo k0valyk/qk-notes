@@ -32,11 +32,18 @@ body{
 
 .input-field{
   background:var(--card); border:1px solid var(--line); border-radius:16px;
-  padding:14px 16px; color:var(--muted); font-size:14px; margin-bottom:16px;
-  outline:none; min-height:20px;
+  padding:14px 16px; color:var(--text); font-size:14px; margin-bottom:16px;
+  outline:none; min-height:20px; width:100%;
+  font-family:inherit;
 }
-.input-field:focus{border-color:var(--accent); color:var(--text);}
-.input-field:empty:before{content:attr(data-ph);}
+.input-field::placeholder{ color:var(--muted); }
+.input-field:focus{border-color:var(--accent);}
+textarea.sheet-field.multiline{
+  width:100%; background:var(--card); border:1px solid var(--line); border-radius:12px;
+  padding:12px 14px; color:var(--text); font-family:inherit; font-size:14px;
+  outline:none; resize:vertical; min-height:90px;
+}
+textarea.sheet-field.multiline:focus{ border-color:var(--accent); }
 
 .tabs{display:flex; gap:22px; border-bottom:1px solid var(--line); margin-bottom:18px;}
 .tab{font-size:14px; color:var(--muted); padding-bottom:10px; font-weight:600; cursor:pointer;}

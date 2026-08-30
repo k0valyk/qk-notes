@@ -15,7 +15,7 @@ function applyI18n(){
     const v = DICT[el.dataset.i18n];
     if (v != null) el.textContent = v;
   });
-  document.getElementById("remind-input").dataset.ph = tr("ph_reminder", "New reminder…");
+  document.getElementById("remind-input").placeholder = tr("ph_reminder", "New reminder…");
 }
 async function setLang(lang){
   LANG = lang;
@@ -121,7 +121,7 @@ function openSection(table){
   const scr = TABLE_SCREEN[table];
   show(scr);
   if (scr === "list"){
-    document.getElementById("quick-input").dataset.ph = tr(TABLES[table].phKey);
+    document.getElementById("quick-input").placeholder = tr(TABLES[table].phKey);
     renderTabs();
   }
   renderList();
@@ -190,7 +190,7 @@ function openSheet(table, item = null){
   editing = { table, item };
   const t = TABLES[table];
   document.getElementById("sheet-overlay").classList.remove("hidden");
-  document.getElementById("sheet-text").textContent = item ? item.text : "";
+  document.getElementById("sheet-text").value = item ? (item.text || "") : "";
   document.getElementById("sheet-datetime").value = item?.datetime || "";
   const chips = document.getElementById("sheet-chips");
   const label = document.getElementById("sheet-sub-label");
@@ -216,7 +216,7 @@ function closeSheet(){ document.getElementById("sheet-overlay").classList.add("h
 document.getElementById("sheet-save").addEventListener("click", async () => {
   if (!editing) return;
   const { table, item } = editing;
-  const text = document.getElementById("sheet-text").textContent.trim();
+  const text = document.getElementById("sheet-text").value.trim();
   if (!text) { closeSheet(); return; }
   const sub = document.querySelector("#sheet-chips .chip-opt.on")?.dataset.sub || null;
   const dt = document.getElementById("sheet-datetime").value || null;
@@ -248,12 +248,12 @@ document.getElementById("sheet-overlay").addEventListener("click", e => {
 document.getElementById("quick-input").addEventListener("keydown", async e => {
   if (e.key === "Enter"){
     e.preventDefault();
-    const text = e.target.textContent.trim();
+    const text = e.target.value.trim();
     if (!text) return;
     try {
       await api(`/api/${current.table}`, { method: "POST",
         body: JSON.stringify({ text, subsection: current.sub, datetime: null }) });
-      e.target.textContent = "";
+      e.target.value = "";
       renderList();
     } catch (err) { tg?.showAlert?.(tr("err_add", "Add failed")); }
   }
@@ -261,12 +261,12 @@ document.getElementById("quick-input").addEventListener("keydown", async e => {
 document.getElementById("remind-input").addEventListener("keydown", async e => {
   if (e.key === "Enter"){
     e.preventDefault();
-    const text = e.target.textContent.trim();
+    const text = e.target.value.trim();
     if (!text) return;
     try {
       await api("/api/reminders", { method: "POST",
         body: JSON.stringify({ text, datetime: new Date(Date.now() + 3600000).toISOString().slice(0,19) }) });
-      e.target.textContent = "";
+      e.target.value = "";
       renderList();
     } catch (err) { tg?.showAlert?.(tr("err_add", "Add failed")); }
   }
