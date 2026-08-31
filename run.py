@@ -26,7 +26,10 @@ logger = logging.getLogger("qk_notes.run")
 async def run_bot() -> None:
     from aiogram import Bot
 
+    from bot.commands import set_bot_commands
+
     bot = Bot(token=settings.bot_token)
+    await set_bot_commands(bot)
     start_scheduler(bot)
     try:
         await dp.start_polling(bot)
