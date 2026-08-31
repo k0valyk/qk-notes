@@ -13,19 +13,6 @@ body{
   overflow:hidden; background:var(--bg); position:relative;
   display:flex; flex-direction:column;
 }
-.topbar{
-  display:flex; align-items:center; justify-content:space-between;
-  padding:14px 20px 14px; border-bottom:1px solid var(--line);
-}
-.topbar .back{color:var(--accent); font-size:15px; font-weight:500; cursor:pointer;}
-.topbar .title{text-align:center;}
-.topbar .title .name{font-size:16px; font-weight:700;}
-.topbar .title .sub{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; margin-top:2px;}
-.dots-btn{
-  width:30px; height:30px; border-radius:50%;
-  border:1px solid var(--line); display:flex; align-items:center; justify-content:center;
-  color:var(--accent); font-size:14px; cursor:pointer;
-}
 .content{padding:18px 18px 8px; flex:1; overflow-y:auto; min-height:0; padding-bottom:120px; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;}
 .screen{display:none;}
 .screen.active{display:block;}
@@ -154,6 +141,10 @@ textarea.sheet-field.multiline:focus{ border-color:var(--accent); }
 }
 .mic-card .status{font-size:15px; font-weight:700;}
 .mic-card #mic-sub{font-size:12px; color:var(--muted);}
+.mic-card .mic-actions{display:flex; gap:10px; width:100%; margin-top:6px;}
+.mic-btn{flex:1; text-align:center; padding:13px; border-radius:14px; font-size:14px; font-weight:700; cursor:pointer;}
+.mic-btn.cancel{background:#1c1c1f; color:var(--muted);}
+.mic-btn.save{background:var(--accent); color:#0a0a0c;}
 body.light .guide-text{ color:var(--muted); }
 
 .sheet-overlay{

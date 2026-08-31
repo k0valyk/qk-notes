@@ -26,7 +26,7 @@ class Settings:
     # Production host for the Mini App. Telegram only shows WebApp buttons for
     # public HTTPS URLs, so we ignore any non-HTTPS / localhost value.
     # Bump _WEBAPP_V to force Telegram WebView to load a fresh document.
-    _WEBAPP_V = 5
+    _WEBAPP_V = 6
     _PROD_BASE = "https://qk-notes-production.up.railway.app"
 
     @property

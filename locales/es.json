@@ -1,7 +1,7 @@
 {
   "app_name": "QK NOTES",
   "start": "QK NOTES está listo.\n\nEnvíame un mensaje de voz: lo transcribiré, lo clasificaré y lo guardaré en Planes / Notas / Reuniones / Recordatorios.\n\nTambién abre el Mini App:",
-  "open_webapp": "📱 Abrir Mini App",
+  "open_webapp": "Abrir",
   "processing": "🎤 Procesando tu mensaje de voz...",
   "transcribe_failed": "❌ No pude transcribir este mensaje de voz.\nInténtalo de nuevo en un momento.",
   "no_speech": "No pude reconocer el habla. Inténtalo de nuevo.",
@@ -97,7 +97,7 @@
   "open_shortcuts": "Abrir la app Atajos",
   "recording": "Grabando…",
   "analyzing": "Analizando…",
-  "mic_release": "Suelta para enviar",
+  "mic_release": "Guardar — añadir, Cancelar — descartar",
   "mic_saved": "Guardado {type} #{id}",
   "mic_unavailable": "La grabación no está disponible aquí. Mantén 🎙 en el chat con el bot."
 }

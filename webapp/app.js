@@ -196,7 +196,7 @@ function openSheet(table, item = null){
   document.querySelector(".fab").style.display = "none";
   document.querySelector(".mic").style.display = "none";
   document.getElementById("sheet-overlay").classList.remove("hidden");
-  try { tg?.BackButton?.offClick(closeSheet); tg?.BackButton?.onClick(closeSheet); tg?.BackButton?.show?.(); } catch {}
+  try { tg?.BackButton?.offClick(backToHome); tg?.BackButton?.offClick(closeSheet); tg?.BackButton?.onClick(closeSheet); tg?.BackButton?.show?.(); } catch {}
   document.getElementById("sheet-text").value = item ? (item.text || "") : "";
   document.getElementById("sheet-datetime").value = item?.datetime || "";
   const chips = document.getElementById("sheet-chips");
@@ -221,11 +221,11 @@ function openSheet(table, item = null){
 function closeSheet(){
   document.getElementById("sheet-overlay").classList.add("hidden");
   editing = null;
-  try { tg?.BackButton?.hide?.(); tg?.BackButton?.offClick(closeSheet); } catch {}
   const active = document.querySelector(".screen.active")?.id || "";
   const onList = ["screen-list","screen-reminders"].includes(active);
   document.querySelector(".fab").style.display = (onList || active === "screen-digest") ? "flex" : "none";
   document.querySelector(".mic").style.display = active === "screen-digest" ? "flex" : "none";
+  setTelegramBack(active === "screen-digest" ? "digest" : "other");
 }
 
 document.getElementById("sheet-save").addEventListener("click", async () => {
@@ -295,21 +295,24 @@ document.querySelector(".fab").addEventListener("click", () => {
   else openSheet(current.table, null);
 });
 document.querySelector(".mic").addEventListener("click", () => {
-  tg?.HapticFeedback?.notificationOccurred("warning");
-  tg?.showAlert?.(tr("mic_hint", "Press and hold 🎙 in the chat with the bot to add by voice."));
+  if (recorder) return;
+  startRecording();
 });
 
 /* --- in-app voice recorder (press and hold the 🎙 button) ------------------ */
 const TYPE_KEYS = { plan: "type_plan", note: "type_note", meeting: "type_meeting", reminder: "type_reminder" };
-let recorder = null, recorderStream = null, micChunks = [], micHeld = false, micHoldTimer = null;
+let recorder = null, recorderStream = null, micChunks = [], micSendPending = false;
+const MIC_FLAG = "qk_mic_granted";
 
-function showMicOverlay(on, status, sub){
+function showMicOverlay(on, status, sub, showActions){
   const ov = document.getElementById("mic-overlay");
   if (!ov) return;
   if (on){
     ov.classList.remove("hidden");
     document.getElementById("mic-status").textContent = status;
     document.getElementById("mic-sub").textContent = sub || "";
+    const ac = document.getElementById("mic-actions");
+    if (ac) ac.classList.toggle("hidden", !showActions);
   } else ov.classList.add("hidden");
 }
 function hideFabMic(){
@@ -326,26 +329,37 @@ async function startRecording(){
   try {
     if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== "function") throw new Error("noMic");
     recorderStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    try { localStorage.setItem(MIC_FLAG, "1"); } catch {}
     recorder = new MediaRecorder(recorderStream, { mimeType: "audio/webm" });
     micChunks = [];
     recorder.addEventListener("dataavailable", e => { if (e.data && e.data.size) micChunks.push(e.data); });
-    recorder.addEventListener("stop", () => { sendRecordedAudio(); });
+    recorder.addEventListener("stop", () => {
+      if (micSendPending) sendRecordedAudio();
+      else { showMicOverlay(false); restoreFabMic(); }
+    });
     recorder.start();
     hideFabMic();
-    showMicOverlay(true, tr("recording", "Recording…"), tr("mic_release", "Release to send"));
+    showMicOverlay(true, tr("recording", "Recording…"), tr("mic_release", "Save to add, Cancel to discard"), true);
     tg?.HapticFeedback?.notificationOccurred("success");
   } catch (e){
     showMicOverlay(false); restoreFabMic();
     tg?.showAlert?.(tr("mic_unavailable", "Recording isn't available here. Hold 🎙 in the chat with the bot instead."));
   }
 }
-function stopRecording(){
-  clearTimeout(micHoldTimer);
-  if (recorder){ try { recorder.stop(); } catch(e){ showMicOverlay(false); restoreFabMic(); } }
-  else { showMicOverlay(false); restoreFabMic(); }
+function cancelRecording(){
+  micSendPending = false;
+  finishStop();
+}
+function saveRecording(){
+  micSendPending = true;
+  finishStop();
+}
+function finishStop(){
+  if (recorder){ try { recorder.stop(); } catch {} }
+  if (recorderStream){ try { recorderStream.getTracks().forEach(tr => tr.stop()); } catch {} recorderStream = null; }
 }
 async function sendRecordedAudio(){
-  showMicOverlay(true, tr("analyzing", "Analyzing…"), "");
+  showMicOverlay(true, tr("analyzing", "Analyzing…"), "", false);
   const blob = new Blob(micChunks, { type: "audio/webm" });
   micChunks = [];
   recorder = null;
@@ -370,14 +384,13 @@ async function sendRecordedAudio(){
   }
 }
 const micBtn = document.querySelector(".mic");
-micBtn.addEventListener("pointerdown", e => {
-  e.preventDefault();
-  micHeld = true;
-  micHoldTimer = setTimeout(() => { if (micHeld) startRecording(); }, 200);
+micBtn.addEventListener("click", () => {
+  if (recorder) return;
+  startRecording();
 });
-micBtn.addEventListener("pointerup", () => { micHeld = false; stopRecording(); });
-micBtn.addEventListener("pointercancel", () => { micHeld = false; stopRecording(); });
 micBtn.addEventListener("contextmenu", e => { e.preventDefault(); });
+document.getElementById("mic-cancel").addEventListener("click", cancelRecording);
+document.getElementById("mic-save").addEventListener("click", saveRecording);
 
 /* --- settings ------------------------------------------------------------ */
 function langName(l){ return { en:"English", uk:"Українська", ru:"Русский", pl:"Polski", es:"Español" }[l] || l; }
@@ -488,10 +501,13 @@ document.getElementById("broadcast-send").addEventListener("click", async () => 
 document.getElementById("row-admin").addEventListener("click", () => { loadAdmin(); show("admin"); });
 
 /* --- init ------------------------------------------------------------------ */
-applyTheme("dark");
-setLang("en");
-loadDigest();
-loadSettings();
+async function init(){
+  applyTheme("dark");
+  setLang("en");
+  await loadSettings();
+  loadDigest();
+}
+init();
 
 /* hide floating buttons while scrolling */
 let floatTimer = null;
@@ -541,7 +557,7 @@ function show(name){
   const onList = ["list","reminders"].includes(name);
   document.querySelector(".fab").style.display = onList ? "flex" : (name === "digest" ? "flex" : "none");
   document.querySelector(".mic").style.display = name === "digest" ? "flex" : "none";
-  document.getElementById("back-btn").textContent = name === "digest" ? tr("btn_close", "Close") : tr("btn_back", "‹ Back");
+  setTelegramBack(name);
   if (name === "digest") loadDigest();
 }
 
@@ -554,14 +570,17 @@ document.querySelectorAll(".navitem").forEach(n =>
     else if (nav === "reminders") openSection("reminders");
     else show(nav);
   }));
-function closeApp(){
-  try { if (tg && typeof tg.close === "function") { tg.close(); return; } } catch {}
-  try { window.close(); } catch {}
+function backToHome(){ show("digest"); }
+function setTelegramBack(name){
+  try {
+    if (!tg) return;
+    const b = tg.BackButton;
+    if (!b) return;
+    b.offClick(backToHome);
+    b.offClick(closeSheet);
+    if (name === "digest"){ b.hide(); }
+    else { b.onClick(backToHome); b.show(); }
+  } catch {}
 }
-document.getElementById("back-btn").addEventListener("click", () => {
-  if (document.querySelector(".screen.active").id === "screen-digest") closeApp();
-  else show("digest");
-});
-document.getElementById("dots-btn").addEventListener("click", () => show("settings"));
 document.querySelectorAll(".card[data-open], .wide-card[data-open]").forEach(el =>
   el.addEventListener("click", () => openSection(el.dataset.open)));

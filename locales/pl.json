@@ -1,7 +1,7 @@
 {
   "app_name": "QK NOTES",
   "start": "QK NOTES jest gotowy.\n\nWyślij mi wiadomość głosową — przepiszę ją, sklasyfikuję i zapiszę w Planach / Notatkach / Spotkaniach / Przypomnieniach.\n\nOtwórz także Mini App:",
-  "open_webapp": "📱 Otwórz Mini App",
+  "open_webapp": "Otwórz",
   "processing": "🎤 Przetwarzam wiadomość głosową...",
   "transcribe_failed": "❌ Nie udało się przepisać tej wiadomości głosowej.\nSpróbuj ponownie za chwilę.",
   "no_speech": "Nie udało się rozpoznać mowy. Spróbuj ponownie.",
@@ -97,7 +97,7 @@
   "open_shortcuts": "Otwórz aplikację Shortcuts",
   "recording": "Nagrywam…",
   "analyzing": "Analizuję…",
-  "mic_release": "Puść, aby wysłać",
+  "mic_release": "Zapisz — dodaj, Anuluj — odrzuć",
   "mic_saved": "Zapisano {type} #{id}",
   "mic_unavailable": "Nagrywanie tu niedostępne. Przytrzymaj 🎙 na czacie z botem."
 }
