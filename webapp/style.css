@@ -8,8 +8,9 @@ body{
   font-family:-apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, sans-serif;
 }
 .phone{
-  max-width:430px; margin:0 auto; min-height:100vh;
-  background:var(--bg); position:relative;
+  max-width:430px; margin:0 auto;
+  height:100vh; height:100dvh;
+  overflow:hidden; background:var(--bg); position:relative;
   display:flex; flex-direction:column;
 }
 .topbar{
@@ -25,7 +26,7 @@ body{
   border:1px solid var(--line); display:flex; align-items:center; justify-content:center;
   color:var(--accent); font-size:14px; cursor:pointer;
 }
-.content{padding:18px 18px 8px; flex:1; overflow-y:auto; min-height:60vh; padding-bottom:120px;}
+.content{padding:18px 18px 8px; flex:1; overflow-y:auto; min-height:0; padding-bottom:120px; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;}
 .screen{display:none;}
 .screen.active{display:block;}
 .hidden{display:none !important;}
@@ -44,6 +45,8 @@ textarea.sheet-field.multiline{
   outline:none; resize:vertical; min-height:90px;
 }
 textarea.sheet-field.multiline:focus{ border-color:var(--accent); }
+.sheet{ touch-action:manipulation; }
+.sheet textarea, .sheet input, .input-field, .sheet-field{ -webkit-user-select:text; user-select:text; }
 
 .tabs{display:flex; gap:22px; border-bottom:1px solid var(--line); margin-bottom:18px;}
 .tab{font-size:14px; color:var(--muted); padding-bottom:10px; font-weight:600; cursor:pointer;}
@@ -135,7 +138,7 @@ body.light .guide-text{ color:var(--muted); }
 
 .sheet-overlay{
   position:fixed; inset:0; background:rgba(0,0,0,.55);
-  display:flex; align-items:flex-end; z-index:10;
+  display:flex; align-items:flex-end; z-index:100;
 }
 .sheet{
   width:100%; max-width:430px; margin:0 auto;
@@ -198,8 +201,8 @@ body.light .guide-text{ color:var(--muted); }
 
 .bottomnav{
   display:grid; grid-template-columns:repeat(6,1fr); gap:6px;
-  padding:14px 10px 20px; border-top:1px solid var(--line); background:#0d0d0f;
-  position:sticky; bottom:0;
+  padding:14px 10px calc(14px + env(safe-area-inset-bottom)); border-top:1px solid var(--line); background:#0d0d0f;
+  position:relative; z-index:4; flex-shrink:0;
 }
 .navitem{
   display:flex; flex-direction:column; align-items:center; gap:5px;

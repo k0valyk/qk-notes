@@ -93,5 +93,6 @@
   "admin_denied": "Dostęp tylko dla administratora",
   "mic_hint": "Przytrzymaj 🎙 na czacie z botem, aby dodać głosem.\nAlbo skonfiguruj skrót iOS w Ustawieniach → Dodawanie głosowe przez Shortcuts.",
   "sent_msg": "Wysłano: {s}, błędy: {f}",
+  "added_at": "🕒 Dodano: {time}",
   "open_shortcuts": "Otwórz aplikację Shortcuts"
 }

@@ -16,6 +16,8 @@ function applyI18n(){
     if (v != null) el.textContent = v;
   });
   document.getElementById("remind-input").placeholder = tr("ph_reminder", "New reminder…");
+  const qi = document.getElementById("quick-input");
+  if (qi) qi.placeholder = tr(TABLES[current.table].phKey);
 }
 async function setLang(lang){
   LANG = lang;
@@ -24,6 +26,7 @@ async function setLang(lang){
     DICT = res.ok ? await res.json() : {};
   } catch { DICT = {}; }
   applyI18n();
+  applyLangUI();
   if (document.getElementById("screen-list").classList.contains("active")) renderTabs();
 }
 
@@ -156,10 +159,11 @@ async function renderList(){
     const chip = TABLES[table].chip[item.subsection]
       ? `<span class="chip ${TABLES[table].chip[item.subsection]}">${subLabel(item.subsection)}</span>`
       : "";
-    const when = item.datetime ? fmtDate(item.datetime) :
-      (item.created_at ? item.created_at.slice(0, 16).replace("T", " ") : "");
-    div.innerHTML = `<div class="top"><div class="txt">${escapeHtml(item.text)}</div>${chip}</div>
-      <div class="meta">${escapeHtml(when)}</div>`;
+    const showWhen = table !== "notes" && (item.datetime || item.created_at);
+    const when = showWhen ? (item.datetime ? fmtDate(item.datetime)
+      : item.created_at.slice(0, 16).replace("T", " ")) : "";
+    div.innerHTML = `<div class="top"><div class="txt">${escapeHtml(item.text)}</div>${chip}</div>` +
+      (when ? `<div class="meta">${escapeHtml(when)}</div>` : "");
     bindLongPress(div, table, item);
     container.appendChild(div);
   }
@@ -189,7 +193,10 @@ function fmtDate(iso){
 function openSheet(table, item = null){
   editing = { table, item };
   const t = TABLES[table];
+  document.querySelector(".fab").style.display = "none";
+  document.querySelector(".mic").style.display = "none";
   document.getElementById("sheet-overlay").classList.remove("hidden");
+  try { tg?.BackButton?.offClick(closeSheet); tg?.BackButton?.onClick(closeSheet); tg?.BackButton?.show?.(); } catch {}
   document.getElementById("sheet-text").value = item ? (item.text || "") : "";
   document.getElementById("sheet-datetime").value = item?.datetime || "";
   const chips = document.getElementById("sheet-chips");
@@ -208,10 +215,18 @@ function openSheet(table, item = null){
     chips.innerHTML = "";
   }
   document.getElementById("sheet-del").style.visibility = item ? "visible" : "hidden";
-  document.getElementById("sheet-text").focus();
+  requestAnimationFrame(() => { try { document.getElementById("sheet-text").focus(); } catch {} });
 }
 
-function closeSheet(){ document.getElementById("sheet-overlay").classList.add("hidden"); editing = null; }
+function closeSheet(){
+  document.getElementById("sheet-overlay").classList.add("hidden");
+  editing = null;
+  try { tg?.BackButton?.hide?.(); tg?.BackButton?.offClick(closeSheet); } catch {}
+  const active = document.querySelector(".screen.active")?.id || "";
+  const onList = ["screen-list","screen-reminders"].includes(active);
+  document.querySelector(".fab").style.display = (onList || active === "screen-digest") ? "flex" : "none";
+  document.querySelector(".mic").style.display = active === "screen-digest" ? "flex" : "none";
+}
 
 document.getElementById("sheet-save").addEventListener("click", async () => {
   if (!editing) return;
@@ -241,7 +256,11 @@ document.getElementById("sheet-del").addEventListener("click", async () => {
   } catch (e) { tg?.showAlert?.(tr("err_delete", "Delete failed")); }
 });
 document.getElementById("sheet-overlay").addEventListener("click", e => {
-  if (e.target.id === "sheet-overlay") closeSheet();
+  if (!e.target.closest(".sheet")) closeSheet();
+});
+document.querySelector(".sheet").addEventListener("pointerdown", e => {
+  if (e.target.closest(".chip-row") || e.target.closest(".actions") || e.target.closest("input, textarea")) return;
+  try { document.getElementById("sheet-text").focus({ preventScroll: true }); } catch {}
 });
 
 /* --- quick add (inline field) + FAB + mic -------------------------------- */
@@ -282,6 +301,11 @@ document.querySelector(".mic").addEventListener("click", () => {
 
 /* --- settings ------------------------------------------------------------ */
 function langName(l){ return { en:"English", uk:"Українська", ru:"Русский", pl:"Polski", es:"Español" }[l] || l; }
+function applyLangUI(){
+  document.querySelectorAll(".lang").forEach(x => x.classList.toggle("active", x.dataset.l === LANG));
+  const el = document.getElementById("lang-val");
+  if (el) el.textContent = langName(LANG) + " ›";
+}
 function applyTheme(mode){
   document.body.classList.toggle("light", mode === "light");
   if (tg?.setHeaderColor) tg.setHeaderColor(mode === "light" ? "#f5f5f7" : "#0a0a0c");
@@ -293,8 +317,13 @@ async function loadSettings(){
     document.getElementById("uname").textContent = me.first_name || "User";
     document.getElementById("uhandle").textContent = me.username ? "@" + me.username : "";
     document.getElementById("avatar").textContent = (me.first_name || "U")[0].toUpperCase();
-    document.querySelectorAll(".lang").forEach(l => l.classList.toggle("active", l.dataset.l === me.language));
-    document.getElementById("lang-val").textContent = langName(me.language) + " ›";
+    applyLangUI();
+    try {
+      const qa = await api("/api/quick-action/token");
+      document.getElementById("qa-url").textContent = qa.url;
+      document.getElementById("qa-block").classList.remove("hidden");
+      document.getElementById("qa-toggle").classList.remove("off");
+    } catch {}
     document.querySelectorAll(".theme-opt").forEach(t => t.classList.toggle("on", t.dataset.t === (me.theme || "dark")));
     applyTheme(me.theme || "dark");
     document.getElementById("admin-block").style.display = me.is_admin ? "block" : "none";
@@ -305,8 +334,7 @@ document.getElementById("row-language").addEventListener("click", () =>
 document.querySelectorAll(".lang").forEach(l => l.addEventListener("click", async () => {
   await api("/api/settings", { method: "PUT", body: JSON.stringify({ language: l.dataset.l }) }).catch(()=>{});
   await setLang(l.dataset.l);
-  document.querySelectorAll(".lang").forEach(x => x.classList.toggle("active", x.dataset.l === l.dataset.l));
-  document.getElementById("lang-val").textContent = langName(l.dataset.l) + " ›";
+  applyLangUI();
   loadDigest();
 }));
 document.querySelectorAll(".theme-opt").forEach(t => t.addEventListener("click", async () => {
@@ -318,12 +346,12 @@ document.getElementById("qa-toggle").addEventListener("click", async () => {
   const block = document.getElementById("qa-block");
   const tog = document.getElementById("qa-toggle");
   if (block.classList.contains("hidden")){
+    block.classList.remove("hidden");
+    tog.classList.remove("off");
     try {
       const qa = await api("/api/quick-action/token");
       document.getElementById("qa-url").textContent = qa.url;
-      block.classList.remove("hidden");
-      tog.classList.remove("off");
-    } catch { tg?.showAlert?.(tr("not_authorized", "Not authorized")); }
+    } catch { document.getElementById("qa-url").textContent = ""; }
   } else { block.classList.add("hidden"); tog.classList.add("off"); }
 });
 document.getElementById("qa-copy").addEventListener("click", () => {
@@ -387,17 +415,20 @@ loadSettings();
 
 /* hide floating buttons while scrolling */
 let floatTimer = null;
-document.querySelectorAll(".screen").forEach(scr => {
-  scr.addEventListener("scroll", () => {
-    document.querySelector(".fab").classList.add("float-hide");
-    document.querySelector(".mic").classList.add("float-hide");
-    clearTimeout(floatTimer);
-    floatTimer = setTimeout(() => {
-      document.querySelector(".fab").classList.remove("float-hide");
-      document.querySelector(".mic").classList.remove("float-hide");
-    }, 600);
-  }, { passive: true });
-});
+function onPageScroll(){
+  const fab = document.querySelector(".fab"), mic = document.querySelector(".mic");
+  if (fab) fab.classList.add("float-hide");
+  if (mic) mic.classList.add("float-hide");
+  clearTimeout(floatTimer);
+  floatTimer = setTimeout(() => {
+    if (fab) fab.classList.remove("float-hide");
+    if (mic) mic.classList.remove("float-hide");
+  }, 700);
+}
+window.addEventListener("scroll", onPageScroll, { passive: true });
+document.addEventListener("scroll", onPageScroll, { passive: true });
+document.querySelectorAll(".screen").forEach(scr =>
+  scr.addEventListener("scroll", onPageScroll, { passive: true }));
 
 /* quick-action setup guides */
 function guideText(key, fallback){ return tr(key, fallback).replace(/\\n/g, "\n"); }
@@ -443,8 +474,12 @@ document.querySelectorAll(".navitem").forEach(n =>
     else if (nav === "reminders") openSection("reminders");
     else show(nav);
   }));
+function closeApp(){
+  try { if (tg && typeof tg.close === "function") { tg.close(); return; } } catch {}
+  try { window.close(); } catch {}
+}
 document.getElementById("back-btn").addEventListener("click", () => {
-  if (document.querySelector(".screen.active").id === "screen-digest") tg?.close?.();
+  if (document.querySelector(".screen.active").id === "screen-digest") closeApp();
   else show("digest");
 });
 document.getElementById("dots-btn").addEventListener("click", () => show("settings"));

@@ -93,5 +93,6 @@
   "admin_denied": "Admin access denied",
   "mic_hint": "Press and hold 🎙 in the chat with the bot to add by voice.\nOr set up the iOS Shortcut in Settings → Voice add via Shortcuts.",
   "sent_msg": "Sent: {s}, failed: {f}",
+  "added_at": "🕒 Added: {time}",
   "open_shortcuts": "Open Shortcuts app"
 }

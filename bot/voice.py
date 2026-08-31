@@ -136,9 +136,15 @@ async def voice_handler(message: Message, bot: Bot, db_user: dict) -> None:
         )
 
         title_line = f"📌 {classification['title']}\n" if classification["title"] else ""
+        from zoneinfo import ZoneInfo
+        try:
+            tz = ZoneInfo(settings.default_timezone)
+        except Exception:
+            tz = datetime.timezone.utc
+        stamp = datetime.datetime.now(tz).strftime("%Y-%m-%d %H:%M")
         await status.edit_text(
             t(lang, "saved", record_type=t(lang, TYPE_KEY[classification["type"]]), record_id=record_id)
-            + f"\n\n{title_line}📝 {text}",
+            + f"\n\n{title_line}📝 {text}\n" + t(lang, "added_at", time=stamp),
             reply_markup=fix_category_keyboard(classification["type"]),
         )
 
