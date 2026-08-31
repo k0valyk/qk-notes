@@ -10,7 +10,7 @@ sys.path.append(str(ROOT))
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from api.routers import admin, quick_action, records, settings
+from api.routers import admin, quick_action, records, settings, voice
 from db import init_db
 
 logger = logging.getLogger("qk_notes.api")
@@ -31,6 +31,7 @@ for table in ("plans", "notes", "meetings", "reminders"):
     app.include_router(records.make_records_router(table))
 app.include_router(settings.router)
 app.include_router(quick_action.router)
+app.include_router(voice.router)
 app.include_router(admin.router)
 
 

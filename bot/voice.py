@@ -106,6 +106,25 @@ async def run_pipeline(text: str, user_id: int, language: str, telegram_file_id:
     return record_id, classification
 
 
+async def _confirm_saved(status: Message, text: str, record_id: int, classification: dict, lang: str) -> None:
+    """Edit the \"processing…\" message into the saved confirmation with a timestamp."""
+    from zoneinfo import ZoneInfo
+    try:
+        tz = ZoneInfo(settings.default_timezone)
+    except Exception:
+        tz = datetime.timezone.utc
+    stamp = datetime.datetime.now(tz).strftime("%Y-%m-%d %H:%M")
+    title_line = f"📌 {classification['title']}\n" if classification["title"] else ""
+    try:
+        await status.edit_text(
+            t(lang, "saved", record_type=t(lang, TYPE_KEY[classification["type"]]), record_id=record_id)
+            + f"\n\n{title_line}📝 {text}\n" + t(lang, "added_at", time=stamp),
+            reply_markup=fix_category_keyboard(classification["type"]),
+        )
+    except TelegramAPIError:
+        logger.exception("Telegram API error while confirming save")
+
+
 @router.message(F.voice)
 async def voice_handler(message: Message, bot: Bot, db_user: dict) -> None:
     lang = db_user.get("language", "en")
@@ -135,24 +154,38 @@ async def voice_handler(message: Message, bot: Bot, db_user: dict) -> None:
             text, db_user["user_id"], lang, message.voice.file_id, digest_reply=digest_reply
         )
 
-        title_line = f"📌 {classification['title']}\n" if classification["title"] else ""
-        from zoneinfo import ZoneInfo
-        try:
-            tz = ZoneInfo(settings.default_timezone)
-        except Exception:
-            tz = datetime.timezone.utc
-        stamp = datetime.datetime.now(tz).strftime("%Y-%m-%d %H:%M")
-        await status.edit_text(
-            t(lang, "saved", record_type=t(lang, TYPE_KEY[classification["type"]]), record_id=record_id)
-            + f"\n\n{title_line}📝 {text}\n" + t(lang, "added_at", time=stamp),
-            reply_markup=fix_category_keyboard(classification["type"]),
-        )
+        await _confirm_saved(status, text, record_id, classification, lang)
 
     except TelegramAPIError:
         logger.exception("Telegram API error while processing voice message")
     except Exception:
         logger.exception("Voice processing failed")
-        await status.edit_text(t(lang, "process_failed"))
+        try:
+            await status.edit_text(t(lang, "process_failed"))
+        except Exception:
+            pass
+
+
+@router.message(F.text)
+async def text_handler(message: Message, db_user: dict) -> None:
+    """Plain text messages are classified and saved automatically —
+    the bot decides by itself whether it is a plan, note, meeting or reminder."""
+    text = (message.text or "").strip()
+    if not text or text.startswith("/"):
+        return
+    lang = db_user.get("language", "en")
+    status = await message.answer(t(lang, "processing"))
+    try:
+        record_id, classification = await run_pipeline(text, db_user["user_id"], lang)
+        await _confirm_saved(status, text, record_id, classification, lang)
+    except TelegramAPIError:
+        logger.exception("Telegram API error while processing text message")
+    except Exception:
+        logger.exception("Text processing failed")
+        try:
+            await status.edit_text(t(lang, "process_failed"))
+        except Exception:
+            pass
 
 
 @router.callback_query(F.data.startswith("fixcat:"))

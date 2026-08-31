@@ -94,5 +94,10 @@
   "mic_hint": "Mantén pulsado 🎙 en el chat con el bot para añadir por voz.\nO configura el atajo de iOS en Ajustes → Añadir por voz con Shortcuts.",
   "sent_msg": "Enviado: {s}, fallidos: {f}",
   "added_at": "🕒 Añadido: {time}",
-  "open_shortcuts": "Abrir la app Atajos"
+  "open_shortcuts": "Abrir la app Atajos",
+  "recording": "Grabando…",
+  "analyzing": "Analizando…",
+  "mic_release": "Suelta para enviar",
+  "mic_saved": "Guardado {type} #{id}",
+  "mic_unavailable": "La grabación no está disponible aquí. Mantén 🎙 en el chat con el bot."
 }

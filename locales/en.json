@@ -94,5 +94,10 @@
   "mic_hint": "Press and hold 🎙 in the chat with the bot to add by voice.\nOr set up the iOS Shortcut in Settings → Voice add via Shortcuts.",
   "sent_msg": "Sent: {s}, failed: {f}",
   "added_at": "🕒 Added: {time}",
-  "open_shortcuts": "Open Shortcuts app"
+  "open_shortcuts": "Open Shortcuts app",
+  "recording": "Recording…",
+  "analyzing": "Analyzing…",
+  "mic_release": "Release to send",
+  "mic_saved": "Saved {type} #{id}",
+  "mic_unavailable": "Recording isn't available here. Hold 🎙 in the chat with the bot instead."
 }

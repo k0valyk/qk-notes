@@ -299,6 +299,86 @@ document.querySelector(".mic").addEventListener("click", () => {
   tg?.showAlert?.(tr("mic_hint", "Press and hold 🎙 in the chat with the bot to add by voice."));
 });
 
+/* --- in-app voice recorder (press and hold the 🎙 button) ------------------ */
+const TYPE_KEYS = { plan: "type_plan", note: "type_note", meeting: "type_meeting", reminder: "type_reminder" };
+let recorder = null, recorderStream = null, micChunks = [], micHeld = false, micHoldTimer = null;
+
+function showMicOverlay(on, status, sub){
+  const ov = document.getElementById("mic-overlay");
+  if (!ov) return;
+  if (on){
+    ov.classList.remove("hidden");
+    document.getElementById("mic-status").textContent = status;
+    document.getElementById("mic-sub").textContent = sub || "";
+  } else ov.classList.add("hidden");
+}
+function hideFabMic(){
+  document.querySelector(".fab").style.display = "none";
+  document.querySelector(".mic").style.display = "none";
+}
+function restoreFabMic(){
+  const active = document.querySelector(".screen.active")?.id || "";
+  const onList = ["screen-list","screen-reminders"].includes(active);
+  document.querySelector(".fab").style.display = (onList || active === "screen-digest") ? "flex" : "none";
+  document.querySelector(".mic").style.display = active === "screen-digest" ? "flex" : "none";
+}
+async function startRecording(){
+  try {
+    if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== "function") throw new Error("noMic");
+    recorderStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    recorder = new MediaRecorder(recorderStream, { mimeType: "audio/webm" });
+    micChunks = [];
+    recorder.addEventListener("dataavailable", e => { if (e.data && e.data.size) micChunks.push(e.data); });
+    recorder.addEventListener("stop", () => { sendRecordedAudio(); });
+    recorder.start();
+    hideFabMic();
+    showMicOverlay(true, tr("recording", "Recording…"), tr("mic_release", "Release to send"));
+    tg?.HapticFeedback?.notificationOccurred("success");
+  } catch (e){
+    showMicOverlay(false); restoreFabMic();
+    tg?.showAlert?.(tr("mic_unavailable", "Recording isn't available here. Hold 🎙 in the chat with the bot instead."));
+  }
+}
+function stopRecording(){
+  clearTimeout(micHoldTimer);
+  if (recorder){ try { recorder.stop(); } catch(e){ showMicOverlay(false); restoreFabMic(); } }
+  else { showMicOverlay(false); restoreFabMic(); }
+}
+async function sendRecordedAudio(){
+  showMicOverlay(true, tr("analyzing", "Analyzing…"), "");
+  const blob = new Blob(micChunks, { type: "audio/webm" });
+  micChunks = [];
+  recorder = null;
+  if (recorderStream){ try { recorderStream.getTracks().forEach(tr => tr.stop()); } catch {} recorderStream = null; }
+  try {
+    const fd = new FormData();
+    fd.append("audio", blob, "voice.webm");
+    const res = await fetch("/api/voice", { method: "POST", headers: { "X-Telegram-Init-Data": tg?.initData || "" }, body: fd });
+    if (!res.ok) throw new Error("err");
+    const j = await res.json();
+    showMicOverlay(false); restoreFabMic();
+    if (j.saved){
+      const typeName = tr(TYPE_KEYS[j.record_type] || j.record_type, j.record_type);
+      tg?.showAlert?.(tr("mic_saved", "Saved {type} #{id}").replace("{type}", typeName).replace("{id}", String(j.record_id)));
+    } else {
+      tg?.showAlert?.(tr("no_speech", "Couldn't recognize any speech. Try again."));
+    }
+    loadDigest();
+  } catch (e){
+    showMicOverlay(false); restoreFabMic();
+    tg?.showAlert?.(tr("err_add", "Add failed"));
+  }
+}
+const micBtn = document.querySelector(".mic");
+micBtn.addEventListener("pointerdown", e => {
+  e.preventDefault();
+  micHeld = true;
+  micHoldTimer = setTimeout(() => { if (micHeld) startRecording(); }, 200);
+});
+micBtn.addEventListener("pointerup", () => { micHeld = false; stopRecording(); });
+micBtn.addEventListener("pointercancel", () => { micHeld = false; stopRecording(); });
+micBtn.addEventListener("contextmenu", e => { e.preventDefault(); });
+
 /* --- settings ------------------------------------------------------------ */
 function langName(l){ return { en:"English", uk:"Українська", ru:"Русский", pl:"Polski", es:"Español" }[l] || l; }
 function applyLangUI(){

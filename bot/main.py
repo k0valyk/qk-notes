@@ -9,6 +9,7 @@ from aiogram import BaseMiddleware, Bot, Dispatcher
 from aiogram.types import CallbackQuery, Message
 
 from bot import commands, voice
+from bot.commands import set_bot_commands
 from config import settings
 from db import init_db, upsert_user
 
@@ -60,6 +61,7 @@ async def main() -> None:
 
     bot = Bot(token=settings.bot_token)
 
+    await set_bot_commands(bot)
     logger.info("Starting @%s", settings.bot_username)
 
     try:

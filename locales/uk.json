@@ -94,5 +94,10 @@
   "mic_hint": "Затисни 🎙 у чаті з ботом, щоб додати голосом.\nАбо налаштуй iOS Shortcut у Налаштуваннях → Голосове додавання через Shortcuts.",
   "sent_msg": "Надіслано: {s}, помилок: {f}",
   "added_at": "🕒 Додано: {time}",
-  "open_shortcuts": "Відкрити додаток Shortcuts"
+  "open_shortcuts": "Відкрити додаток Shortcuts",
+  "recording": "Записую…",
+  "analyzing": "Аналізую…",
+  "mic_release": "Відпусти, щоб надіслати",
+  "mic_saved": "Збережено {type} #{id}",
+  "mic_unavailable": "Запис тут недоступний. Затисни 🎙 у чаті з ботом натомість."
 }
