@@ -24,8 +24,8 @@
   "digest_hint": "Odpowiedz na tę wiadomość głosem, aby dodać plany lub spotkania na dziś.",
   "reminder_fired": "⏰ Przypomnienie:\n\n📌 {title}\n📝 {text}\n🕒 {datetime}",
   "help": "Polecenia:\n/start — menu główne i Mini App\n/help — ta wiadomość\n/actionbutton — jak skonfigurować Przycisk akcji na iPhonie\n/backtap — jak skonfigurować Stuknięcie w tył",
-  "actionbutton_guide": "📱 Konfiguracja Przycisku akcji (iPhone 15+):\n1. Otwórz Ustawienia → Przycisk akcji.\n2. Wybierz działanie \"Shortcut\" (Skrót).\n3. Wybierz skrót QK NOTES (utwórz go przez przycisk w Mini App → Ustawienia → Szybkie akcje).\n4. Teraz naciśnięcie Przycisku akcji uruchamia nagrywanie głosu i wysyła je do bota.",
-  "backtap_guide": "📱 Konfiguracja Stuknięcia w tył (iPhone):\n1. Otwórz Ustawienia → Dostępność → Dotyk → Stuknięcie w tył.\n2. Wybierz Podwójne lub Potrójne stuknięcie.\n3. Wybierz skrót QK NOTES (tworzony w Mini App → Ustawienia → Szybkie akcje).\n4. Teraz podwójne/potrójne stuknięcie w tył telefonu uruchamia nagrywanie głosu i wysyła je do bota.",
+  "actionbutton_guide": "📱 Przycisk akcji (iPhone 15 Pro i nowsze) — krok po kroku:\n\nKROK 1. Pobierz link:\n• Mini App → Ustawienia → „Dodawanie głosowe przez Shortcuts”.\n• Włącz przełącznik i naciśnij „Kopiuj”.\n\nKROK 2. Utwórz skrót w aplikacji „Skróty” (Shortcuts):\n1. Naciśnij „+” (u góry po prawej) → „Dodaj akcję”.\n2. Dodaj „Dyktofon” (Record Audio): wyłącz „Pokazuj podczas nagrywania”.\n3. Znowu „Dodaj akcję” → „Pobierz zawartość URL”.\n4. W pole URL wklej skopiowany link.\n5. Naciśnij „Pokaż więcej”: Metoda = POST, Treść żądania = Formularz.\n6. W formularzu dodaj pole: nazwa = audio, typ = Plik, wartość = Nagrany dźwięk.\n7. Naciśnij „Gotowe” i nazwij skrót QK NOTES.\n\nKROK 3. Powiąż:\n1. Ustawienia iPhone → Przycisk akcji.\n2. Przewiń do „Skrót” i wybierz QK NOTES.\n\nGotowe! Naciśnięcie przycisku akcji nagrywa głos i od razu wysyła go do bota.",
+  "backtap_guide": "📱 Stuknięcie w tył (iPhone 8 i nowsze) — krok po kroku:\n\nKROK 1 i 2 — takie same jak dla Przycisku akcji:\n• Skopiuj link: Mini App → Ustawienia → „Dodawanie głosowe przez Shortcuts” → „Kopiuj”.\n• W „Skrótach” utwórz skrót QK NOTES: Dyktofon → Pobierz zawartość URL (Metoda POST, Treść żądania = Formularz, pole audio = Nagrany dźwięk).\n\nKROK 3. Powiąż z stuknięciem:\n1. Ustawienia iPhone → Dostępność → Dotyk.\n2. Przewiń w dół → „Stuknięcie w tył”.\n3. Wybierz „Podwójne stuknięcie” lub „Potrójne stuknięcie”.\n4. Na liście skrótów wybierz QK NOTES.\n\nGotowe! Dwukrotne (potrójne) stuknięcie w tył iPhone — głos pójdzie do bota.",
   "reply_not_found": "Odpowiedz na wiadomość przeglądu głosem.",
   "nav_home": "Główna",
   "nav_plans": "Plany",
@@ -99,5 +99,9 @@
   "analyzing": "Analizuję…",
   "mic_release": "Zapisz — dodaj, Anuluj — odrzuć",
   "mic_saved": "Zapisano {type} #{id}",
-  "mic_unavailable": "Nagrywanie tu niedostępne. Przytrzymaj 🎙 na czacie z botem."
+  "mic_unavailable": "Nagrywanie tu niedostępne. Przytrzymaj 🎙 na czacie z botem.",
+  "label_digest": "Czas przeglądu",
+  "digest_off": "Wyłączony",
+  "digest_custom": "Własna godzina",
+  "mic_edit_title": "Edytuj tekst"
 }

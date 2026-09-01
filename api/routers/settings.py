@@ -12,6 +12,7 @@ from config import settings
 class SettingsIn(BaseModel):
     language: str | None = None
     theme: str | None = None
+    digest_time: str | None = None
 
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
@@ -33,13 +34,14 @@ async def get_settings(user: dict = Depends(get_current_user)):
         "photo_url": db_user["photo_url"],
         "language": db_user["language"],
         "theme": db_user["theme"],
+        "digest_time": db_user.get("digest_time", "08:00"),
         "is_admin": bool(db_user["is_admin"]),
     }
 
 
 @router.put("")
 async def put_settings(body: SettingsIn, user: dict = Depends(get_current_user)):
-    await update_user_settings(user["id"], body.language, body.theme)
+    await update_user_settings(user["id"], body.language, body.theme, body.digest_time)
     return {"ok": True}
 
 

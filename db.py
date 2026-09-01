@@ -38,12 +38,17 @@ async def init_db() -> None:
                 photo_url TEXT,
                 language TEXT NOT NULL DEFAULT 'en',
                 theme TEXT NOT NULL DEFAULT 'dark',
+                digest_time TEXT NOT NULL DEFAULT '08:00',
                 is_admin INTEGER NOT NULL DEFAULT 0,
                 is_blocked INTEGER NOT NULL DEFAULT 0,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 last_active_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN digest_time TEXT NOT NULL DEFAULT '08:00'")
+        except Exception:
+            pass  # column already exists on this database
         await db.execute("""
             CREATE TABLE IF NOT EXISTS plans (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -264,7 +269,12 @@ async def move_record(table: str, record_id: int, new_table: str, new_subsection
 # --- Users / settings ------------------------------------------------------
 
 
-async def update_user_settings(user_id: int, language: str | None = None, theme: str | None = None) -> None:
+async def update_user_settings(
+    user_id: int,
+    language: str | None = None,
+    theme: str | None = None,
+    digest_time: str | None = None,
+) -> None:
     sets, params = [], []
     if language:
         sets.append("language = ?")
@@ -272,6 +282,9 @@ async def update_user_settings(user_id: int, language: str | None = None, theme:
     if theme:
         sets.append("theme = ?")
         params.append(theme)
+    if digest_time:
+        sets.append("digest_time = ?")
+        params.append(digest_time)
     if not sets:
         return
     params.append(user_id)

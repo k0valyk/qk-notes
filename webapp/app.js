@@ -35,12 +35,14 @@ const TABLES = {
               chip: { in_progress: "doing", done: "done" } },
   notes:    { subs: ["note", "idea"], phKey: "ph_record", chip: {} },
   meetings: { subs: ["upcoming", "past"], phKey: "ph_meeting", chip: {} },
-  reminders:{ subs: [], phKey: "ph_reminder", chip: {} },
+  reminders:{ subs: ["nearest", "past"], phKey: "ph_reminder", chip: {} },
 };
 const SUB_KEYS = {
   in_progress: "sub_in_progress", done: "sub_done", note: "sub_note",
   idea: "sub_idea", upcoming: "sub_upcoming", past: "sub_past",
+  nearest: "tab_nearest",
 };
+const WM_KEYS = { plans:"nav_plans", notes:"nav_records", meetings:"nav_meetings", reminders:"nav_reminders" };
 function subLabel(sub){ return tr(SUB_KEYS[sub] || sub, (sub || "").replace(/_/g, " ")); }
 const TABLE_SCREEN = { plans: "list", notes: "list", meetings: "list", reminders: "reminders" };
 
@@ -132,7 +134,7 @@ function openSection(table){
 
 function renderTabs(){
   const t = TABLES[current.table];
-  const tabs = document.getElementById("tabs");
+  const tabs = document.getElementById(current.table === "reminders" ? "remind-tabs" : "tabs");
   const html = t.subs.map((s, i) =>
     `<div class="tab ${s === current.sub ? "active" : ""}" data-sub="${s}">${subLabel(s)}</div>`).join("");
   tabs.innerHTML = html;
@@ -147,9 +149,15 @@ async function renderList(){
   container.innerHTML = "";
   let items = [];
   try { items = await api(`/api/${table}`); } catch { return; }
-  if (table !== "reminders" && current.sub) items = items.filter(i => i.subsection === current.sub);
+  if (table === "reminders"){
+    const nowMs = Date.now();
+    items = items.filter(i => {
+      const t = i.datetime ? new Date(i.datetime).getTime() : null;
+      return current.sub === "past" ? (t !== null && t < nowMs) : (t === null || t >= nowMs);
+    });
+  } else if (current.sub) items = items.filter(i => i.subsection === current.sub);
   if (!items.length){
-    container.innerHTML = `<div class="empty"><div class="wm">PLANNER</div>
+    container.innerHTML = `<div class="empty"><div class="wm">${escapeHtml(tr(WM_KEYS[table] || "app_name", "QK NOTES"))}</div>
       <div class="sub">${tr("empty_hint", "Nothing here yet. Add by voice or with the + button.")}</div></div>`;
     return;
   }
@@ -223,7 +231,7 @@ function closeSheet(){
   editing = null;
   const active = document.querySelector(".screen.active")?.id || "";
   const onList = ["screen-list","screen-reminders"].includes(active);
-  document.querySelector(".fab").style.display = (onList || active === "screen-digest") ? "flex" : "none";
+  document.querySelector(".fab").style.display = onList ? "flex" : "none";
   document.querySelector(".mic").style.display = active === "screen-digest" ? "flex" : "none";
   setTelegramBack(active === "screen-digest" ? "digest" : "other");
 }
@@ -322,13 +330,15 @@ function hideFabMic(){
 function restoreFabMic(){
   const active = document.querySelector(".screen.active")?.id || "";
   const onList = ["screen-list","screen-reminders"].includes(active);
-  document.querySelector(".fab").style.display = (onList || active === "screen-digest") ? "flex" : "none";
+  document.querySelector(".fab").style.display = onList ? "flex" : "none";
   document.querySelector(".mic").style.display = active === "screen-digest" ? "flex" : "none";
 }
 async function startRecording(){
   try {
     if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== "function") throw new Error("noMic");
-    recorderStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    if (!recorderStream || recorderStream.getAudioTracks().every(t => t.readyState !== "live")) {
+      recorderStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    }
     try { localStorage.setItem(MIC_FLAG, "1"); } catch {}
     recorder = new MediaRecorder(recorderStream, { mimeType: "audio/webm" });
     micChunks = [];
@@ -355,29 +365,81 @@ function saveRecording(){
   finishStop();
 }
 function finishStop(){
+  // Do NOT stop the audio tracks: the kept-alive stream means the microphone
+  // permission is asked only once and the next recording starts instantly.
   if (recorder){ try { recorder.stop(); } catch {} }
-  if (recorderStream){ try { recorderStream.getTracks().forEach(tr => tr.stop()); } catch {} recorderStream = null; }
+}
+let micEditing = null;
+function openMicEditor(j){
+  micEditing = { type: j.type || "note", datetime: j.datetime || null, title: j.title || null };
+  const ed = document.getElementById("mic-edit");
+  ed.classList.remove("hidden");
+  ed.value = j.text || "";
+  const chips = document.getElementById("mic-chips");
+  chips.classList.remove("hidden");
+  chips.innerHTML = ["plan","note","meeting","reminder"].map(t2 =>
+    `<span class="chip-opt ${t2 === micEditing.type ? "on" : ""}" data-t="${t2}">${tr(TYPE_KEYS[t2] || t2, t2)}</span>`).join("");
+  chips.querySelectorAll(".chip-opt").forEach(c => c.addEventListener("click", () => {
+    chips.querySelectorAll(".chip-opt").forEach(x => x.classList.remove("on"));
+    c.classList.add("on");
+    micEditing.type = c.dataset.t;
+  }));
+  document.getElementById("mic-status").textContent = tr("mic_edit_title", "Edit the text");
+  document.getElementById("mic-sub").textContent = "";
+  try { ed.focus(); } catch {}
+}
+function closeMicEditor(){
+  micEditing = null;
+  document.getElementById("mic-edit").classList.add("hidden");
+  document.getElementById("mic-chips").classList.add("hidden");
+}
+async function commitMicEdit(){
+  const text = document.getElementById("mic-edit").value.trim();
+  if (!text || !micEditing) return;
+  const map = {
+    plan: ["plans", "in_progress"],
+    note: ["notes", "note"],
+    meeting: ["meetings", "upcoming"],
+    reminder: ["reminders", null],
+  };
+  const [table, sub] = map[micEditing.type] || map.note;
+  const body = {
+    text,
+    title: micEditing.title || null,
+    subsection: sub,
+    datetime: micEditing.datetime ||
+      (micEditing.type === "reminder" ? new Date(Date.now() + 3600000).toISOString().slice(0,19) : null),
+  };
+  const typeName = tr(TYPE_KEYS[micEditing.type] || micEditing.type, micEditing.type);
+  try {
+    await api(`/api/${table}`, { method: "POST", body: JSON.stringify(body) });
+    tg?.HapticFeedback?.notificationOccurred("success");
+    closeMicEditor();
+    showMicOverlay(false); restoreFabMic();
+    tg?.showAlert?.(tr("mic_saved", "Saved {type} #{id}").replace("{type}", typeName).replace("{id}", "✓"));
+    loadDigest();
+    micEditing = null;
+  } catch (e){
+    tg?.showAlert?.(tr("err_add", "Add failed"));
+  }
 }
 async function sendRecordedAudio(){
   showMicOverlay(true, tr("analyzing", "Analyzing…"), "", false);
   const blob = new Blob(micChunks, { type: "audio/webm" });
   micChunks = [];
   recorder = null;
-  if (recorderStream){ try { recorderStream.getTracks().forEach(tr => tr.stop()); } catch {} recorderStream = null; }
   try {
     const fd = new FormData();
     fd.append("audio", blob, "voice.webm");
-    const res = await fetch("/api/voice", { method: "POST", headers: { "X-Telegram-Init-Data": tg?.initData || "" }, body: fd });
+    const res = await fetch("/api/voice?save=0", { method: "POST", headers: { "X-Telegram-Init-Data": tg?.initData || "" }, body: fd });
     if (!res.ok) throw new Error("err");
     const j = await res.json();
-    showMicOverlay(false); restoreFabMic();
-    if (j.saved){
-      const typeName = tr(TYPE_KEYS[j.record_type] || j.record_type, j.record_type);
-      tg?.showAlert?.(tr("mic_saved", "Saved {type} #{id}").replace("{type}", typeName).replace("{id}", String(j.record_id)));
-    } else {
+    if (!j.edit){
       tg?.showAlert?.(tr("no_speech", "Couldn't recognize any speech. Try again."));
+      showMicOverlay(false); restoreFabMic();
+      return;
     }
-    loadDigest();
+    openMicEditor(j);
   } catch (e){
     showMicOverlay(false); restoreFabMic();
     tg?.showAlert?.(tr("err_add", "Add failed"));
@@ -389,8 +451,14 @@ micBtn.addEventListener("click", () => {
   startRecording();
 });
 micBtn.addEventListener("contextmenu", e => { e.preventDefault(); });
-document.getElementById("mic-cancel").addEventListener("click", cancelRecording);
-document.getElementById("mic-save").addEventListener("click", saveRecording);
+document.getElementById("mic-cancel").addEventListener("click", () => {
+  if (micEditing){ closeMicEditor(); showMicOverlay(false); restoreFabMic(); return; }
+  cancelRecording();
+});
+document.getElementById("mic-save").addEventListener("click", () => {
+  if (micEditing){ commitMicEdit(); return; }
+  saveRecording();
+});
 
 /* --- settings ------------------------------------------------------------ */
 function langName(l){ return { en:"English", uk:"Українська", ru:"Русский", pl:"Polski", es:"Español" }[l] || l; }
@@ -411,6 +479,12 @@ async function loadSettings(){
     document.getElementById("uhandle").textContent = me.username ? "@" + me.username : "";
     document.getElementById("avatar").textContent = (me.first_name || "U")[0].toUpperCase();
     applyLangUI();
+    const dv = document.getElementById("digest-val");
+    if (dv){
+      const dt = me.digest_time || "08:00";
+      dv.textContent = (dt === "off" ? tr("digest_off", "Off") : dt) + " ›";
+      document.querySelectorAll("#digest-pills .lang").forEach(x => x.classList.toggle("active", x.dataset.d === dt));
+    }
     try {
       const qa = await api("/api/quick-action/token");
       document.getElementById("qa-url").textContent = qa.url;
@@ -435,6 +509,25 @@ document.querySelectorAll(".theme-opt").forEach(t => t.addEventListener("click",
   applyTheme(t.dataset.t);
   document.querySelectorAll(".theme-opt").forEach(x => x.classList.toggle("on", x === t));
 }));
+document.getElementById("row-digest").addEventListener("click", () =>
+  document.getElementById("digest-pills").classList.toggle("hidden"));
+document.querySelectorAll("#digest-pills .lang").forEach(l => l.addEventListener("click", async () => {
+  const d = l.dataset.d;
+  const customInput = document.getElementById("digest-custom");
+  if (d === "custom"){ customInput.classList.remove("hidden"); return; }
+  customInput.classList.add("hidden");
+  await api("/api/settings", { method: "PUT", body: JSON.stringify({ digest_time: d }) }).catch(()=>{});
+  document.getElementById("digest-val").textContent = (d === "off" ? tr("digest_off", "Off") : d) + " ›";
+  document.querySelectorAll("#digest-pills .lang").forEach(x => x.classList.toggle("active", x === l));
+}));
+document.getElementById("digest-custom").addEventListener("change", async e => {
+  const v = e.target.value;
+  if (!v) return;
+  const hhmm = v.slice(0, 5);
+  await api("/api/settings", { method: "PUT", body: JSON.stringify({ digest_time: hhmm }) }).catch(()=>{});
+  document.getElementById("digest-val").textContent = hhmm + " ›";
+  document.getElementById("digest-custom").classList.add("hidden");
+});
 document.getElementById("qa-toggle").addEventListener("click", async () => {
   const block = document.getElementById("qa-block");
   const tog = document.getElementById("qa-toggle");
@@ -555,7 +648,7 @@ function show(name){
       (name === "reminders" && n.dataset.nav === "reminders") ||
       (name === "list" && n.dataset.nav === (current.table === "notes" ? "records" : current.table === "meetings" ? "meetings" : current.table === "reminders" ? "reminders" : "plans"))));
   const onList = ["list","reminders"].includes(name);
-  document.querySelector(".fab").style.display = onList ? "flex" : (name === "digest" ? "flex" : "none");
+  document.querySelector(".fab").style.display = onList ? "flex" : "none";
   document.querySelector(".mic").style.display = name === "digest" ? "flex" : "none";
   setTelegramBack(name);
   if (name === "digest") loadDigest();
@@ -582,5 +675,12 @@ function setTelegramBack(name){
     else { b.onClick(backToHome); b.show(); }
   } catch {}
 }
+document.getElementById("qa-promo").addEventListener("click", () => {
+  show("settings");
+  setTimeout(() => {
+    document.getElementById("qa-block")?.classList.remove("hidden");
+    document.getElementById("qa-toggle")?.classList.remove("off");
+  }, 250);
+});
 document.querySelectorAll(".card[data-open], .wide-card[data-open]").forEach(el =>
   el.addEventListener("click", () => openSection(el.dataset.open)));

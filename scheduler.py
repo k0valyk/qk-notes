@@ -1,10 +1,16 @@
-"""APScheduler background jobs: daily digest, reminder notifications, cleanup."""
+"""APScheduler background jobs: daily digest, reminder notifications, cleanup.
+
+All "local" times (digest hour, reminder datetimes) are interpreted in the
+user-facing timezone (settings.default_timezone, e.g. Europe/Kyiv) because the
+server itself usually runs in UTC on Railway.
+"""
 
 import asyncio
 import datetime
 import logging
 import sys
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
@@ -29,9 +35,21 @@ logger = logging.getLogger("qk_notes.scheduler")
 
 bot_ref: Bot | None = None
 
+try:
+    LOCAL_TZ = ZoneInfo(settings.default_timezone)
+except Exception:
+    LOCAL_TZ = datetime.timezone.utc
+
+_sent_digest: set[tuple[int, str]] = set()
+
+
+def _local_now() -> datetime.datetime:
+    """Current time in the user-facing timezone, naive (matches stored datetimes)."""
+    return datetime.datetime.now(LOCAL_TZ).replace(tzinfo=None)
+
 
 def _today_range() -> tuple[str, str]:
-    now = datetime.datetime.now()
+    now = _local_now()
     start = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
     end = now.replace(hour=23, minute=59, second=59).isoformat()
     return start, end
@@ -47,7 +65,7 @@ async def _send_digest_for_user(bot: Bot, user: dict) -> None:
     user_id = user["user_id"]
     plans = _records_today(await list_records("plans", user_id))
     meetings = _records_today(await list_records("meetings", user_id))
-    now = datetime.datetime.now()
+    now = _local_now()
     week_ahead = (now + datetime.timedelta(days=7)).isoformat()
     reminders = [
         r for r in await list_records("reminders", user_id)
@@ -73,13 +91,26 @@ async def _send_digest_for_user(bot: Bot, user: dict) -> None:
     await bot.send_message(user_id, "\n".join(lines))
 
 
-async def digest_job() -> None:
-    """Daily 8:00 digest for every active user."""
+async def digest_tick() -> None:
+    """Runs every minute. Sends each user's digest at their own local time
+    (users.digest_time, "HH:MM" or "off")."""
     if bot_ref is None:
         return
+    now = _local_now()
+    hhmm = now.strftime("%H:%M")
+    today = now.date().isoformat()
     for user in await get_all_active_users():
+        digest_time = (user.get("digest_time") or "08:00").strip().lower()
+        if digest_time in ("off", "-", "disabled", "none"):
+            continue
+        if digest_time != hhmm:
+            continue
+        key = (user["user_id"], today)
+        if key in _sent_digest:
+            continue
         try:
             await _send_digest_for_user(bot_ref, user)
+            _sent_digest.add(key)
         except Exception:
             logger.exception("Digest failed for user %s", user.get("user_id"))
 
@@ -88,7 +119,7 @@ async def reminders_job() -> None:
     """Notify about reminders whose time has come (runs every minute)."""
     if bot_ref is None:
         return
-    now_iso = datetime.datetime.now().isoformat(timespec="seconds")
+    now_iso = _local_now().isoformat(timespec="seconds")
     for reminder in await get_due_reminders(now_iso):
         user_id = reminder["user_id"]
         try:
@@ -113,18 +144,12 @@ async def cleanup_job() -> None:
 def start_scheduler(bot: Bot) -> AsyncIOScheduler:
     global bot_ref
     bot_ref = bot
-    # pytz (used by APScheduler 3.x) still knows "Europe/Kiev", not "Europe/Kyiv".
-    tz_name = settings.default_timezone
-    try:
-        import pytz
-        tz = pytz.timezone(tz_name)
-    except Exception:
-        tz = tz_name
-    scheduler = AsyncIOScheduler(timezone=tz)
-    scheduler.add_job(digest_job, CronTrigger(hour=8, minute=0))
+    scheduler = AsyncIOScheduler()
+    # Per-user digest time is checked every minute in local (Kyiv) time.
+    scheduler.add_job(digest_tick, IntervalTrigger(minutes=1))
     scheduler.add_job(reminders_job, IntervalTrigger(minutes=1))
-    scheduler.add_job(cleanup_job, CronTrigger(hour=3, minute=30))
+    scheduler.add_job(cleanup_job, CronTrigger(hour=3, minute=30, timezone=LOCAL_TZ))
     scheduler.start()
-    logger.info("Scheduler started (digest 08:00 %s, reminders every minute, cleanup 03:30)",
+    logger.info("Scheduler started (digest per-user time, reminders every minute, cleanup 03:30 %s)",
                 settings.default_timezone)
     return scheduler

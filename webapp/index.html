@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>PLANNER — Mini App</title>
-<link rel="stylesheet" href="/webapp/style.css?v=6">
+<link rel="stylesheet" href="/webapp/style.css?v=8">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -37,9 +37,9 @@
       <div class="label" data-i18n="reminder_nearest">Reminders — Nearest</div>
       <div id="digest-reminders"></div>
     </div>
-    <div class="promo" id="qa-promo">
+        <div class="promo" id="qa-promo">
       <div class="icon">✦</div>
-      <div><div class="t1" data-i18n="add_by_voice">Add by voice</div><div class="t2" data-i18n="add_by_voice_sub">Send a voice note to the bot or use the iOS Shortcut</div></div>
+      <div><div class="t1" data-i18n="qa_action_button">Action Button</div><div class="t2" data-i18n="add_by_voice_sub">Send a voice note to the bot or use the iOS Shortcut</div></div>
     </div>
   </div>
 
@@ -53,7 +53,7 @@
   <!-- REMINDERS -->
   <div class="content screen" id="screen-reminders">
     <input type="text" id="remind-input" class="input-field" placeholder="New reminder…" autocomplete="off">
-    <div class="tabs"><div class="tab active" data-i18n="tab_nearest">Nearest</div></div>
+    <div class="tabs" id="remind-tabs"></div>
     <div id="remind-items"></div>
   </div>
   <!-- SETTINGS -->
@@ -73,6 +73,16 @@
         <span class="lang" data-l="pl">Polski</span>
         <span class="lang" data-l="es">Español</span>
       </div>
+    </div>
+    <div class="set-block">
+      <div class="set-row" id="row-digest"><div class="lab" data-i18n="label_digest">Digest time</div><div class="val" id="digest-val">08:00 ›</div></div>
+      <div class="lang-pills hidden" id="digest-pills">
+        <span class="lang" data-d="08:00">08:00</span>
+        <span class="lang" data-d="11:00">11:00</span>
+        <span class="lang" data-d="off" data-i18n="digest_off">Off</span>
+        <span class="lang" data-d="custom" data-i18n="digest_custom">Custom</span>
+      </div>
+      <input type="time" id="digest-custom" class="sheet-field hidden" style="margin:0 16px 14px; width:calc(100% - 32px);">
     </div>
     <div class="set-block">
       <div class="set-row"><div class="lab" data-i18n="label_theme">Theme</div></div>
@@ -122,6 +132,8 @@
       <div class="pulse">🎙️</div>
       <div class="status" id="mic-status">Recording…</div>
       <div id="mic-sub"></div>
+      <textarea id="mic-edit" class="mic-edit hidden" rows="4"></textarea>
+      <div class="chip-row hidden" id="mic-chips"></div>
       <div class="mic-actions" id="mic-actions">
         <div class="mic-btn cancel" id="mic-cancel" data-i18n="btn_cancel">Cancel</div>
         <div class="mic-btn save" id="mic-save" data-i18n="btn_save">Save</div>
@@ -155,6 +167,6 @@
     <div class="navitem" data-nav="settings"><div class="ic">⚙</div><div class="lb" data-i18n="nav_settings">Settings</div></div>
   </div>
 </div>
-  <script src="/webapp/app.js?v=6"></script>
+  <script src="/webapp/app.js?v=8"></script>
 </body>
 </html>

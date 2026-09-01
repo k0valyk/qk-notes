@@ -24,8 +24,8 @@
   "digest_hint": "Reply to this message with a voice note to add plans or meetings for today.",
   "reminder_fired": "⏰ Reminder:\n\n📌 {title}\n📝 {text}\n🕒 {datetime}",
   "help": "Commands:\n/start — main menu and Mini App\n/help — this message\n/actionbutton — how to set up the iPhone Action Button\n/backtap — how to set up Back Tap",
-  "actionbutton_guide": "📱 Action Button setup (iPhone 15+):\n1. Open Settings → Action Button.\n2. Choose the \"Shortcut\" action.\n3. Pick the QK NOTES shortcut (add it via the button below in Mini App → Settings → Quick Actions).\n4. Now pressing the Action Button starts voice capture and sends it to the bot.",
-  "backtap_guide": "📱 Back Tap setup (iPhone):\n1. Open Settings → Accessibility → Touch → Back Tap.\n2. Choose Double Tap or Triple Tap.\n3. Pick the QK NOTES shortcut (created in Mini App → Settings → Quick Actions).\n4. Now double/triple tapping the back of your phone starts voice capture and sends it to the bot.",
+  "actionbutton_guide": "📱 Action Button (iPhone 15 Pro and newer) — step by step:\n\nSTEP 1 — Get your link:\n• Open the Mini App → Settings → \"Voice add via Shortcuts\".\n• Turn the toggle on and tap Copy.\n\nSTEP 2 — Create the shortcut in the Shortcuts app:\n1. Tap + (top right) → Add Action.\n2. Add Record Audio: turn off \"Show Recording\".\n3. Add Action again → Get Contents of URL.\n4. Paste the copied link into the URL field.\n5. Tap \"Show More\": Method = POST, Request Body = Form.\n6. In the form add a field: name = audio, type = File, value = Recorded Audio.\n7. Tap Done and name the shortcut QK NOTES.\n\nSTEP 3 — Bind it:\n1. iPhone Settings → Action Button.\n2. Scroll to Shortcut and pick QK NOTES.\n\nDone! Pressing the Action Button records your voice and sends it to the bot.",
+  "backtap_guide": "📱 Back Tap (iPhone 8 and newer) — step by step:\n\nSTEP 1 and 2 are the same as for the Action Button:\n• Copy the link in the Mini App → Settings → \"Voice add via Shortcuts\" → Copy.\n• In the Shortcuts app create a QK NOTES shortcut: Record Audio → Get Contents of URL (Method POST, Request Body = Form, field audio = Recorded Audio).\n\nSTEP 3 — Bind it:\n1. iPhone Settings → Accessibility → Touch.\n2. Scroll down to Back Tap.\n3. Pick Double Tap or Triple Tap.\n4. In the shortcut list pick QK NOTES.\n\nDone! Double (or triple) tap the back of your iPhone — your voice goes to the bot.",
   "reply_not_found": "Please reply to the digest message with a voice note.",
   "nav_home": "Home",
   "nav_plans": "Plans",
@@ -99,5 +99,9 @@
   "analyzing": "Analyzing…",
   "mic_release": "Tap Save to add, Cancel to discard",
   "mic_saved": "Saved {type} #{id}",
-  "mic_unavailable": "Recording isn't available here. Hold 🎙 in the chat with the bot instead."
+  "mic_unavailable": "Recording isn't available here. Hold 🎙 in the chat with the bot instead.",
+  "label_digest": "Digest time",
+  "digest_off": "Off",
+  "digest_custom": "Custom",
+  "mic_edit_title": "Edit the text"
 }
