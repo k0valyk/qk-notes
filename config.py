@@ -6,6 +6,25 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+def _resolve_db_path() -> str:
+    """Pick a database location that SURVIVES redeploys.
+
+    Priority:
+    1. DATABASE_PATH env (explicit override).
+    2. Railway Volume mount path (RAILWAY_VOLUME_MOUNT_PATH is set automatically
+       by Railway when a Volume is attached to the service) — data persists
+       across deploys.
+    3. Local ./data fallback for development.
+    """
+    env = os.getenv("DATABASE_PATH")
+    if env:
+        return env
+    volume = os.getenv("RAILWAY_VOLUME_MOUNT_PATH")
+    if volume:
+        return os.path.join(volume, "qk_notes.db")
+    return "data/qk_notes.db"
+
+
 @dataclass(frozen=True)
 class Settings:
     bot_token: str = os.getenv("BOT_TOKEN", "")
@@ -21,12 +40,12 @@ class Settings:
         "openai/gpt-oss-120b",
     )
     default_timezone: str = os.getenv("DEFAULT_TIMEZONE", "Europe/Kyiv")
-    database_path: str = os.getenv("DATABASE_PATH", "data/qk_notes.db")
+    database_path: str = _resolve_db_path()
 
     # Production host for the Mini App. Telegram only shows WebApp buttons for
     # public HTTPS URLs, so we ignore any non-HTTPS / localhost value.
     # Bump _WEBAPP_V to force Telegram WebView to load a fresh document.
-    _WEBAPP_V = 7
+    _WEBAPP_V = 9
     _PROD_BASE = "https://qk-notes-production.up.railway.app"
 
     @property

@@ -145,13 +145,6 @@ textarea.sheet-field.multiline:focus{ border-color:var(--accent); }
 .mic-btn{flex:1; text-align:center; padding:13px; border-radius:14px; font-size:14px; font-weight:700; cursor:pointer;}
 .mic-btn.cancel{background:#1c1c1f; color:var(--muted);}
 .mic-btn.save{background:var(--accent); color:#0a0a0c;}
-.mic-card .mic-edit{
-  width:100%; background:#1d1d20; border:1px solid var(--line); border-radius:12px;
-  padding:12px 14px; color:var(--text); font-family:inherit; font-size:14px;
-  outline:none; resize:vertical; min-height:80px; -webkit-user-select:text; user-select:text;
-}
-.mic-card .mic-edit:focus{border-color:var(--accent);}
-.mic-card .mic-chips{width:100%;}
 body.light .guide-text{ color:var(--muted); }
 
 .sheet-overlay{

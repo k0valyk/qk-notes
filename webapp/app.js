@@ -21,6 +21,7 @@ function applyI18n(){
 }
 async function setLang(lang){
   LANG = lang;
+  try { localStorage.setItem("qk_lang", lang); } catch {}
   try {
     const res = await fetch(`/locales/${lang}.json`);
     DICT = res.ok ? await res.json() : {};
@@ -369,60 +370,6 @@ function finishStop(){
   // permission is asked only once and the next recording starts instantly.
   if (recorder){ try { recorder.stop(); } catch {} }
 }
-let micEditing = null;
-function openMicEditor(j){
-  micEditing = { type: j.type || "note", datetime: j.datetime || null, title: j.title || null };
-  const ed = document.getElementById("mic-edit");
-  ed.classList.remove("hidden");
-  ed.value = j.text || "";
-  const chips = document.getElementById("mic-chips");
-  chips.classList.remove("hidden");
-  chips.innerHTML = ["plan","note","meeting","reminder"].map(t2 =>
-    `<span class="chip-opt ${t2 === micEditing.type ? "on" : ""}" data-t="${t2}">${tr(TYPE_KEYS[t2] || t2, t2)}</span>`).join("");
-  chips.querySelectorAll(".chip-opt").forEach(c => c.addEventListener("click", () => {
-    chips.querySelectorAll(".chip-opt").forEach(x => x.classList.remove("on"));
-    c.classList.add("on");
-    micEditing.type = c.dataset.t;
-  }));
-  document.getElementById("mic-status").textContent = tr("mic_edit_title", "Edit the text");
-  document.getElementById("mic-sub").textContent = "";
-  try { ed.focus(); } catch {}
-}
-function closeMicEditor(){
-  micEditing = null;
-  document.getElementById("mic-edit").classList.add("hidden");
-  document.getElementById("mic-chips").classList.add("hidden");
-}
-async function commitMicEdit(){
-  const text = document.getElementById("mic-edit").value.trim();
-  if (!text || !micEditing) return;
-  const map = {
-    plan: ["plans", "in_progress"],
-    note: ["notes", "note"],
-    meeting: ["meetings", "upcoming"],
-    reminder: ["reminders", null],
-  };
-  const [table, sub] = map[micEditing.type] || map.note;
-  const body = {
-    text,
-    title: micEditing.title || null,
-    subsection: sub,
-    datetime: micEditing.datetime ||
-      (micEditing.type === "reminder" ? new Date(Date.now() + 3600000).toISOString().slice(0,19) : null),
-  };
-  const typeName = tr(TYPE_KEYS[micEditing.type] || micEditing.type, micEditing.type);
-  try {
-    await api(`/api/${table}`, { method: "POST", body: JSON.stringify(body) });
-    tg?.HapticFeedback?.notificationOccurred("success");
-    closeMicEditor();
-    showMicOverlay(false); restoreFabMic();
-    tg?.showAlert?.(tr("mic_saved", "Saved {type} #{id}").replace("{type}", typeName).replace("{id}", "✓"));
-    loadDigest();
-    micEditing = null;
-  } catch (e){
-    tg?.showAlert?.(tr("err_add", "Add failed"));
-  }
-}
 async function sendRecordedAudio(){
   showMicOverlay(true, tr("analyzing", "Analyzing…"), "", false);
   const blob = new Blob(micChunks, { type: "audio/webm" });
@@ -431,15 +378,17 @@ async function sendRecordedAudio(){
   try {
     const fd = new FormData();
     fd.append("audio", blob, "voice.webm");
-    const res = await fetch("/api/voice?save=0", { method: "POST", headers: { "X-Telegram-Init-Data": tg?.initData || "" }, body: fd });
+    const res = await fetch("/api/voice", { method: "POST", headers: { "X-Telegram-Init-Data": tg?.initData || "" }, body: fd });
     if (!res.ok) throw new Error("err");
     const j = await res.json();
-    if (!j.edit){
+    showMicOverlay(false); restoreFabMic();
+    if (j.saved){
+      const typeName = tr(TYPE_KEYS[j.record_type] || j.record_type, j.record_type);
+      tg?.showAlert?.(tr("mic_saved", "Saved {type} #{id}").replace("{type}", typeName).replace("{id}", String(j.record_id)));
+      loadDigest();
+    } else {
       tg?.showAlert?.(tr("no_speech", "Couldn't recognize any speech. Try again."));
-      showMicOverlay(false); restoreFabMic();
-      return;
     }
-    openMicEditor(j);
   } catch (e){
     showMicOverlay(false); restoreFabMic();
     tg?.showAlert?.(tr("err_add", "Add failed"));
@@ -451,19 +400,13 @@ micBtn.addEventListener("click", () => {
   startRecording();
 });
 micBtn.addEventListener("contextmenu", e => { e.preventDefault(); });
-document.getElementById("mic-cancel").addEventListener("click", () => {
-  if (micEditing){ closeMicEditor(); showMicOverlay(false); restoreFabMic(); return; }
-  cancelRecording();
-});
-document.getElementById("mic-save").addEventListener("click", () => {
-  if (micEditing){ commitMicEdit(); return; }
-  saveRecording();
-});
+document.getElementById("mic-cancel").addEventListener("click", cancelRecording);
+document.getElementById("mic-save").addEventListener("click", saveRecording);
 
 /* --- settings ------------------------------------------------------------ */
 function langName(l){ return { en:"English", uk:"Українська", ru:"Русский", pl:"Polski", es:"Español" }[l] || l; }
 function applyLangUI(){
-  document.querySelectorAll(".lang").forEach(x => x.classList.toggle("active", x.dataset.l === LANG));
+  document.querySelectorAll("#lang-pills .lang").forEach(x => x.classList.toggle("active", x.dataset.l === LANG));
   const el = document.getElementById("lang-val");
   if (el) el.textContent = langName(LANG) + " ›";
 }
@@ -498,7 +441,7 @@ async function loadSettings(){
 }
 document.getElementById("row-language").addEventListener("click", () =>
   document.getElementById("lang-pills").classList.toggle("hidden"));
-document.querySelectorAll(".lang").forEach(l => l.addEventListener("click", async () => {
+document.querySelectorAll("#lang-pills .lang").forEach(l => l.addEventListener("click", async () => {
   await api("/api/settings", { method: "PUT", body: JSON.stringify({ language: l.dataset.l }) }).catch(()=>{});
   await setLang(l.dataset.l);
   applyLangUI();
@@ -552,7 +495,18 @@ document.getElementById("qa-refresh").addEventListener("click", async () => {
   } catch { /* ignore */ }
 });
 document.getElementById("qa-open").addEventListener("click", () => {
-  window.location.href = "shortcuts://create-shortcut";
+  const url = "shortcuts://create-shortcut";
+  tg?.HapticFeedback?.notificationOccurred("success");
+  try {
+    const a = document.createElement("a");
+    a.href = url;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } catch (e) {
+    window.location.href = url;
+  }
 });
 
 /* --- admin ---------------------------------------------------------------- */
@@ -596,7 +550,9 @@ document.getElementById("row-admin").addEventListener("click", () => { loadAdmin
 /* --- init ------------------------------------------------------------------ */
 async function init(){
   applyTheme("dark");
-  setLang("en");
+  let savedLang = null;
+  try { savedLang = localStorage.getItem("qk_lang"); } catch {}
+  setLang(savedLang || "en");
   await loadSettings();
   loadDigest();
 }
