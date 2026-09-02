@@ -310,7 +310,7 @@ document.querySelector(".mic").addEventListener("click", () => {
 
 /* --- in-app voice recorder (press and hold the 🎙 button) ------------------ */
 const TYPE_KEYS = { plan: "type_plan", note: "type_note", meeting: "type_meeting", reminder: "type_reminder" };
-let recorder = null, recorderStream = null, micChunks = [], micSendPending = false;
+let recorder = null, recorderStream = null, micChunks = [], micSendPending = false, recordingDone = false;
 const MIC_FLAG = "qk_mic_granted";
 
 function showMicOverlay(on, status, sub, showActions){
@@ -337,6 +337,7 @@ function restoreFabMic(){
 async function startRecording(){
   try {
     if (recorder) return;
+    recordingDone = false;
     if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== "function") throw new Error("noMic");
     recorderStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     try { localStorage.setItem(MIC_FLAG, "1"); } catch {}
@@ -344,8 +345,12 @@ async function startRecording(){
     micChunks = [];
     recorder.addEventListener("dataavailable", e => { if (e.data && e.data.size) micChunks.push(e.data); });
     recorder.addEventListener("stop", () => {
+      // If save was pressed, send; otherwise just hide. finishStop() already cleared the stream.
       if (micSendPending) sendRecordedAudio();
       else { showMicOverlay(false); restoreFabMic(); }
+      // Release references so next recording gets a fresh stream.
+      recorder = null;
+      recorderStream = null;
     });
     recorder.start();
     hideFabMic();
@@ -357,10 +362,14 @@ async function startRecording(){
   }
 }
 function cancelRecording(){
+  if (recordingDone) return;
+  recordingDone = true;
   micSendPending = false;
   finishStop();
 }
 function saveRecording(){
+  if (recordingDone) return;
+  recordingDone = true;
   micSendPending = true;
   finishStop();
 }
@@ -369,9 +378,8 @@ function finishStop(){
   // live track for a second MediaRecorder fails on iOS WebView, which is why the
   // dictaphone appeared to stop working after the first use. A fresh stream is
   // obtained on every recording; the permission itself is granted once and sticks.
-  if (recorder){ try { recorder.stop(); } catch {} }
-  recorder = null;
-  if (recorderStream){ try { recorderStream.getTracks().forEach(t => t.stop()); } catch {} recorderStream = null; }
+  try { if (recorder) recorder.stop(); } catch {}
+  try { if (recorderStream) recorderStream.getTracks().forEach(t => t.stop()); } catch {}
 }
 async function sendRecordedAudio(){
   showMicOverlay(true, tr("analyzing", "Analyzing…"), "", false);
@@ -532,15 +540,19 @@ document.getElementById("qa-open").addEventListener("click", () => {
   const url = "shortcuts://create-shortcut";
   tg?.HapticFeedback?.notificationOccurred("success");
   try {
-    const a = document.createElement("a");
-    a.href = url;
-    a.target = "_blank";
-    a.rel = "noopener";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    if (tg && typeof tg.openLink === "function") {
+      tg.openLink(url, { try_instant_view: false });
+    } else {
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
   } catch (e) {
-    window.location.href = url;
+    try { tg?.openLink?.(url); } catch { window.location.href = url; }
   }
 });
 
