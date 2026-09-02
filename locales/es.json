@@ -103,5 +103,6 @@
   "label_digest": "Hora del resumen",
   "digest_off": "Desactivado",
   "digest_custom": "Hora personalizada",
-  "mic_edit_title": "Edita el texto"
+  "mic_edit_title": "Edita el texto",
+  "confirm_token": "¿Generar un nuevo token? Se reemplazará el actual."
 }

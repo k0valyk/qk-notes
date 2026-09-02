@@ -30,14 +30,25 @@ async def record_voice(
         raise HTTPException(status_code=400, detail="empty audio")
 
     from groq_client import groq_client
+    from bot.voice import whisper_lang
 
     filename = getattr(audio, "filename", None) or "voice.webm"
+    db_user = await upsert_user(
+        user_id=user["id"],
+        username=user.get("username"),
+        first_name=user.get("first_name"),
+    )
+    lang = db_user.get("language", "en")
     try:
-        transcription = await groq_client.audio.transcriptions.create(
-            file=(filename, data),
-            model=settings.groq_transcription_model,
-            response_format="json",
-        )
+        kwargs = {
+            "file": (filename, data),
+            "model": settings.groq_transcription_model,
+            "response_format": "json",
+        }
+        wlang = whisper_lang(lang)
+        if wlang:
+            kwargs["language"] = wlang
+        transcription = await groq_client.audio.transcriptions.create(**kwargs)
     except Exception as exc:
         await log_usage("mini_app_transcription", user["id"], "error", str(exc))
         logger.exception("Mini App transcription failed")
@@ -49,13 +60,6 @@ async def record_voice(
         return {"saved": False, "error": "no_speech"}
 
     await log_usage("mini_app_transcription", user["id"], "ok")
-
-    db_user = await upsert_user(
-        user_id=user["id"],
-        username=user.get("username"),
-        first_name=user.get("first_name"),
-    )
-    lang = db_user.get("language", "en")
 
     # Transcribe-only mode: return the text + classification for editing in the app.
     if save == "0":

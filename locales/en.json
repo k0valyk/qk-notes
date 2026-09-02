@@ -103,5 +103,6 @@
   "label_digest": "Digest time",
   "digest_off": "Off",
   "digest_custom": "Custom",
-  "mic_edit_title": "Edit the text"
+  "mic_edit_title": "Edit the text",
+  "confirm_token": "Generate a new token? This will replace the current one."
 }

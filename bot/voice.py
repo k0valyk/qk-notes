@@ -32,18 +32,30 @@ SUBSECTION_BY_TYPE = {
     "reminder": "remind",
 }
 
+# Whisper language codes for transcription (so Ukrainian isn't mistaken for Russian).
+WHISPER_LANG = {"en": "en", "uk": "uk", "ru": "ru", "pl": "pl", "es": "es"}
 
-async def transcribe(bot: Bot, file_id: str) -> str:
+
+def whisper_lang(lang: str):
+    """Return an ISO-639-1 Whisper language code, or None to auto-detect."""
+    return WHISPER_LANG.get(lang)
+
+
+async def transcribe(bot: Bot, file_id: str, language: str | None = None) -> str:
     """Download a Telegram voice message and transcribe it via Groq Whisper."""
     telegram_file = await bot.get_file(file_id)
     audio = io.BytesIO()
     await bot.download_file(telegram_file.file_path, destination=audio)
     audio.seek(0)
-    transcription = await groq_client.audio.transcriptions.create(
-        file=("voice.ogg", audio.read()),
-        model=settings.groq_transcription_model,
-        response_format="json",
-    )
+    kwargs = {
+        "file": ("voice.ogg", audio.read()),
+        "model": settings.groq_transcription_model,
+        "response_format": "json",
+    }
+    lang = whisper_lang(language)
+    if lang:
+        kwargs["language"] = lang
+    transcription = await groq_client.audio.transcriptions.create(**kwargs)
     return (transcription.text or "").strip()
 
 
@@ -132,7 +144,7 @@ async def voice_handler(message: Message, bot: Bot, db_user: dict) -> None:
 
     try:
         try:
-            text = await transcribe(bot, message.voice.file_id)
+            text = await transcribe(bot, message.voice.file_id, lang)
             await log_usage("transcription", db_user["user_id"], "ok")
         except Exception as exc:
             await log_usage("transcription", db_user["user_id"], "error", str(exc))

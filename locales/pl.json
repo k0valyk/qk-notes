@@ -103,5 +103,6 @@
   "label_digest": "Czas przeglądu",
   "digest_off": "Wyłączony",
   "digest_custom": "Własna godzina",
-  "mic_edit_title": "Edytuj tekst"
+  "mic_edit_title": "Edytuj tekst",
+  "confirm_token": "Wygenerować nowy token? Obecny zostanie zastąpiony."
 }

@@ -336,10 +336,9 @@ function restoreFabMic(){
 }
 async function startRecording(){
   try {
+    if (recorder) return;
     if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== "function") throw new Error("noMic");
-    if (!recorderStream || recorderStream.getAudioTracks().every(t => t.readyState !== "live")) {
-      recorderStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    }
+    recorderStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     try { localStorage.setItem(MIC_FLAG, "1"); } catch {}
     recorder = new MediaRecorder(recorderStream, { mimeType: "audio/webm" });
     micChunks = [];
@@ -366,9 +365,13 @@ function saveRecording(){
   finishStop();
 }
 function finishStop(){
-  // Do NOT stop the audio tracks: the kept-alive stream means the microphone
-  // permission is asked only once and the next recording starts instantly.
+  // Stop the recorder AND release the audio stream tracks. Re-using the same
+  // live track for a second MediaRecorder fails on iOS WebView, which is why the
+  // dictaphone appeared to stop working after the first use. A fresh stream is
+  // obtained on every recording; the permission itself is granted once and sticks.
   if (recorder){ try { recorder.stop(); } catch {} }
+  recorder = null;
+  if (recorderStream){ try { recorderStream.getTracks().forEach(t => t.stop()); } catch {} recorderStream = null; }
 }
 async function sendRecordedAudio(){
   showMicOverlay(true, tr("analyzing", "Analyzing…"), "", false);
@@ -423,11 +426,7 @@ async function loadSettings(){
     document.getElementById("avatar").textContent = (me.first_name || "U")[0].toUpperCase();
     applyLangUI();
     const dv = document.getElementById("digest-val");
-    if (dv){
-      const dt = me.digest_time || "08:00";
-      dv.textContent = (dt === "off" ? tr("digest_off", "Off") : dt) + " ›";
-      document.querySelectorAll("#digest-pills .lang").forEach(x => x.classList.toggle("active", x.dataset.d === dt));
-    }
+    if (dv) updateDigestUI(me.digest_time || "08:00");
     try {
       const qa = await api("/api/quick-action/token");
       document.getElementById("qa-url").textContent = qa.url;
@@ -452,24 +451,37 @@ document.querySelectorAll(".theme-opt").forEach(t => t.addEventListener("click",
   applyTheme(t.dataset.t);
   document.querySelectorAll(".theme-opt").forEach(x => x.classList.toggle("on", x === t));
 }));
+function updateDigestUI(dt){
+  dt = dt || "08:00";
+  const customInput = document.getElementById("digest-custom");
+  const dv = document.getElementById("digest-val");
+  if (dv) dv.textContent = (dt === "off" ? tr("digest_off", "Off") : dt) + " ›";
+  const isPreset = ["08:00", "11:00", "off"].includes(dt);
+  document.querySelectorAll("#digest-pills .lang").forEach(x => {
+    const active = isPreset ? (x.dataset.d === dt) : (x.dataset.d === "custom");
+    x.classList.toggle("active", active);
+  });
+  if (customInput) customInput.classList.toggle("hidden", isPreset);
+}
 document.getElementById("row-digest").addEventListener("click", () =>
   document.getElementById("digest-pills").classList.toggle("hidden"));
 document.querySelectorAll("#digest-pills .lang").forEach(l => l.addEventListener("click", async () => {
   const d = l.dataset.d;
   const customInput = document.getElementById("digest-custom");
-  if (d === "custom"){ customInput.classList.remove("hidden"); return; }
-  customInput.classList.add("hidden");
+  if (d === "custom"){
+    updateDigestUI("custom");
+    customInput.classList.remove("hidden");
+    return;
+  }
   await api("/api/settings", { method: "PUT", body: JSON.stringify({ digest_time: d }) }).catch(()=>{});
-  document.getElementById("digest-val").textContent = (d === "off" ? tr("digest_off", "Off") : d) + " ›";
-  document.querySelectorAll("#digest-pills .lang").forEach(x => x.classList.toggle("active", x === l));
+  updateDigestUI(d);
 }));
 document.getElementById("digest-custom").addEventListener("change", async e => {
   const v = e.target.value;
   if (!v) return;
   const hhmm = v.slice(0, 5);
   await api("/api/settings", { method: "PUT", body: JSON.stringify({ digest_time: hhmm }) }).catch(()=>{});
-  document.getElementById("digest-val").textContent = hhmm + " ›";
-  document.getElementById("digest-custom").classList.add("hidden");
+  updateDigestUI(hhmm);
 });
 document.getElementById("qa-toggle").addEventListener("click", async () => {
   const block = document.getElementById("qa-block");
@@ -489,10 +501,32 @@ document.getElementById("qa-copy").addEventListener("click", () => {
   tg?.HapticFeedback?.notificationOccurred("success");
 });
 document.getElementById("qa-refresh").addEventListener("click", async () => {
-  try {
-    const qa = await api("/api/quick-action/token");
-    document.getElementById("qa-url").textContent = qa.url;
-  } catch { /* ignore */ }
+  const btn = document.getElementById("qa-refresh");
+  const refreshNow = async () => {
+    btn.style.opacity = ".4";
+    btn.style.pointerEvents = "none";
+    btn.textContent = "3s…";
+    for (let i = 3; i >= 1; i--){
+      btn.textContent = i + "s…";
+      await new Promise(r => setTimeout(r, 1000));
+    }
+    try {
+      const qa = await api("/api/quick-action/token");
+      document.getElementById("qa-url").textContent = qa.url;
+      tg?.HapticFeedback?.notificationOccurred("success");
+    } catch { /* ignore */ }
+    btn.style.opacity = "1";
+    btn.style.pointerEvents = "auto";
+    btn.textContent = tr("btn_refresh_token", "New token");
+  };
+  const ask = () => {
+    if (tg && typeof tg.showConfirm === "function"){
+      tg.showConfirm(tr("confirm_token", "Generate a new token? This will replace the current one."), (ok) => { if (ok) refreshNow(); });
+    } else if (window.confirm(tr("confirm_token", "Generate a new token? This will replace the current one."))){
+      refreshNow();
+    }
+  };
+  ask();
 });
 document.getElementById("qa-open").addEventListener("click", () => {
   const url = "shortcuts://create-shortcut";
@@ -500,6 +534,7 @@ document.getElementById("qa-open").addEventListener("click", () => {
   try {
     const a = document.createElement("a");
     a.href = url;
+    a.target = "_blank";
     a.rel = "noopener";
     document.body.appendChild(a);
     a.click();

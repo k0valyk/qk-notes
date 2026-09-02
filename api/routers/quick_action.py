@@ -47,12 +47,17 @@ async def quick_action(request: Request, audio: UploadFile | None = File(None)):
         data = await audio.read()
         if data:
             from groq_client import groq_client
+            from bot.voice import whisper_lang
             filename = getattr(audio, "filename", None) or "voice.m4a"
-            transcription = await groq_client.audio.transcriptions.create(
-                file=(filename, data),
-                model=settings.groq_transcription_model,
-                response_format="json",
-            )
+            kwargs = {
+                "file": (filename, data),
+                "model": settings.groq_transcription_model,
+                "response_format": "json",
+            }
+            wlang = whisper_lang(lang)
+            if wlang:
+                kwargs["language"] = wlang
+            transcription = await groq_client.audio.transcriptions.create(**kwargs)
             text = (transcription.text or "").strip()
     if not text:
         raise HTTPException(status_code=422, detail="No text or audio provided")
