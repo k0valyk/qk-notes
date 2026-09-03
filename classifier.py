@@ -13,7 +13,8 @@ Given a transcribed voice note, return ONLY a JSON object (no markdown, no pream
   "subsection": see rules below,
   "title": "short 3-6 word title summarizing the note",
   "datetime": "ISO 8601 datetime if the note mentions a specific date/time/event, otherwise null",
-  "summary": "one sentence summary of the note"
+  "summary": "one sentence summary of the note",
+  "clean_text": "the note text EDITED according to its content and type"
 }
 
 Type rules:
@@ -21,6 +22,15 @@ Type rules:
 - "note" — a general note or a thought. subsection must be "note" or "idea".
 - "meeting" — a meeting / appointment / call with someone. subsection must be "upcoming".
 - "reminder" — "remind me about X at ..." — the user asks to be notified at a specific time. subsection must be "remind". A "reminder" MUST have a datetime.
+
+clean_text rules (IMPORTANT):
+- Remove spoken command filler words: "remind me to", "add a note", "write down", "note that",
+  "create a plan", "запиши", "додай нотатку", "нагадай мені", "створити план", "zaplanuj", "añade una nota", etc.
+- Add correct punctuation marks and capitalization; split into sentences.
+- Adapt wording to the type: a plan reads like a clear task ("Buy milk"), a reminder like a
+  short description of what to be reminded about, a meeting like a meeting description.
+- Keep ALL meaningful details (names, times, places, numbers). Do not invent new facts.
+- Same language as the original note.
 
 Respond in the same language as the note."""
 
@@ -55,6 +65,7 @@ async def classify_note(text: str) -> dict:
             "title": data.get("title"),
             "datetime": data.get("datetime"),
             "summary": data.get("summary"),
+            "clean_text": (data.get("clean_text") or "").strip() or None,
         }
     except Exception:
         logger.exception("Classification failed")
@@ -64,4 +75,5 @@ async def classify_note(text: str) -> dict:
             "title": None,
             "datetime": None,
             "summary": None,
+            "clean_text": None,
         }

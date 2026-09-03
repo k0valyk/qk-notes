@@ -68,6 +68,7 @@ async def quick_action(request: Request, audio: UploadFile | None = File(None)):
 
     from bot.voice import run_pipeline, TYPE_KEY
     record_id, classification = await run_pipeline(text, user_id, lang)
+    text = classification.get("clean_text") or text
     await log_usage("quick_action", user_id, "ok", classification["type"])
 
     # Send a confirmation message to the user's chat so they see the result.

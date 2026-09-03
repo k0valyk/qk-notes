@@ -84,6 +84,10 @@ async def run_pipeline(text: str, user_id: int, language: str, telegram_file_id:
         await log_usage("classification", user_id, "error", str(exc))
         raise
 
+    # The model returns an edited version of the note (filler words removed,
+    # punctuation restored, wording adapted to the record type). Save THAT text.
+    text = (classification.get("clean_text") or text).strip() or text
+
     note_type = classification["type"]
     subsection = classification["subsection"]
     title = classification["title"]
@@ -172,7 +176,9 @@ async def voice_handler(message: Message, bot: Bot, db_user: dict) -> None:
             text, db_user["user_id"], lang, message.voice.file_id, digest_reply=digest_reply
         )
 
-        await _confirm_saved(status, text, record_id, classification, lang)
+        await _confirm_saved(
+            status, classification.get("clean_text") or text, record_id, classification, lang
+        )
 
     except TelegramAPIError:
         logger.exception("Telegram API error while processing voice message")
@@ -195,7 +201,9 @@ async def text_handler(message: Message, db_user: dict) -> None:
     status = await message.answer(t(lang, "processing"))
     try:
         record_id, classification = await run_pipeline(text, db_user["user_id"], lang)
-        await _confirm_saved(status, text, record_id, classification, lang)
+        await _confirm_saved(
+            status, classification.get("clean_text") or text, record_id, classification, lang
+        )
     except TelegramAPIError:
         logger.exception("Telegram API error while processing text message")
     except Exception:

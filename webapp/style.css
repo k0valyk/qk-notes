@@ -6,7 +6,9 @@
 body{
   background:#000; color:var(--text);
   font-family:-apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, sans-serif;
+  -webkit-tap-highlight-color:transparent;
 }
+*{ -webkit-tap-highlight-color:transparent; }
 .phone{
   max-width:430px; margin:0 auto;
   height:100vh; height:100dvh;
