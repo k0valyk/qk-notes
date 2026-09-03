@@ -20,16 +20,16 @@ body{
 
 .input-field{
   background:var(--card); border:1px solid var(--line); border-radius:16px;
-  padding:14px 16px; color:var(--text); font-size:14px; margin-bottom:16px;
+  padding:14px 16px; color:var(--text); font-size:16px; margin-bottom:16px;
   outline:none; min-height:20px; width:100%;
-  font-family:inherit;
+  font-family:inherit; caret-color:var(--accent);
 }
-.input-field::placeholder{ color:var(--muted); }
+.input-field::placeholder{ color:var(--muted); font-size:14px; }
 .input-field:focus{border-color:var(--accent);}
 textarea.sheet-field.multiline{
   width:100%; background:var(--card); border:1px solid var(--line); border-radius:12px;
-  padding:12px 14px; color:var(--text); font-family:inherit; font-size:14px;
-  outline:none; resize:vertical; min-height:90px;
+  padding:12px 14px; color:var(--text); font-family:inherit; font-size:16px;
+  outline:none; resize:none; min-height:90px; caret-color:var(--accent);
 }
 textarea.sheet-field.multiline:focus{ border-color:var(--accent); }
 .sheet{ touch-action:manipulation; }
@@ -160,8 +160,8 @@ body.light .guide-text{ color:var(--muted); }
 .sheet .field-label{font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--muted); margin:12px 0 6px;}
 .sheet-field{
   background:#1d1d20; border:1px solid var(--line); border-radius:12px;
-  padding:12px 14px; font-size:14px; color:var(--text); outline:none;
-  width:100%; font-family:inherit;
+  padding:12px 14px; font-size:16px; color:var(--text); outline:none;
+  width:100%; font-family:inherit; caret-color:var(--accent);
 }
 .sheet-field.multiline{min-height:64px; line-height:1.5;}
 .chip-row{display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;}
@@ -218,8 +218,11 @@ body.light .guide-text{ color:var(--muted); }
 .navitem{
   display:flex; flex-direction:column; align-items:center; gap:5px;
   padding:8px 2px; border-radius:14px; color:var(--muted); cursor:pointer;
+  transition:background-color .22s ease, color .22s ease, transform .18s ease;
 }
-.navitem .ic{font-size:16px;}
+.navitem:active{ transform:scale(.92); }
+.navitem .ic{font-size:16px; transition:transform .22s ease;}
+.navitem.active .ic{ transform:translateY(-1px) scale(1.12); }
 .navitem .lb{font-size:10px; font-weight:600;}
 .navitem.active{background:var(--text); color:#000;}
 .navitem.active .lb{color:#000;}
@@ -228,4 +231,31 @@ body.light .topbar{background:var(--bg);}
 body.light .bottomnav{background:#fff;}
 body.light .hero{background:linear-gradient(135deg,#eceafd,#f7f6ff); border-color:#d8d4f5;}
 body.light .hero .date{color:#1a1a1c;}
+/* Light-theme fixes: these elements had hardcoded dark backgrounds that
+   looked broken ("artifacts") when the user switched to the light theme. */
+body.light .empty .wm{color:#e4e2ee;}
+body.light .promo{background:linear-gradient(135deg,#f1edff,#faf9ff); border-color:#d8d4f5;}
+body.light .promo .icon{background:#1a1a1c; color:#fff;}
+body.light .promo .pro{background:#1a1a1c; color:#fff;}
+body.light .mic-card{background:#ffffff; border-color:#e2e2e6;}
+body.light .mic-btn.cancel{background:#eceaf2; color:var(--muted);}
+body.light .mic-card .pulse{box-shadow:0 0 0 0 rgba(139,108,243,.45);}
+body.light .mic-card .pulse{animation:pulse-light 1.1s ease-out infinite;}
+@keyframes pulse-light{
+  0%{box-shadow:0 0 0 0 rgba(139,108,243,.45);}
+  70%{box-shadow:0 0 0 18px rgba(139,108,243,0);}
+  100%{box-shadow:0 0 0 0 rgba(139,108,243,0);}
+}
+body.light .sheet{background:#ffffff; border-top-color:#e2e2e6;}
+body.light .sheet .handle{background:#d6d4de;}
+body.light .sheet-field{background:#f4f3f8;}
+body.light .mic{border-color:var(--bg);}
+body.light .navitem.active{background:#1a1a1c; color:#fff;}
+body.light .navitem.active .lb{color:#fff;}
+body.light .toggle.off{background:#d6d4de;}
+body.light .sheet .btn.cancel{background:#eceaf2; color:var(--muted);}
+body.light .sheet .btn.del{background:#fde8e8; color:#dc2626;}
+body.light .tab.active{color:#1a1a1c;}
+body.light .chip.doing{background:#fef3c7;}
+body.light .chip.done{background:#dcfce7;}
 

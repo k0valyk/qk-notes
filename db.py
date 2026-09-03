@@ -297,7 +297,20 @@ async def update_user_settings(
 # --- Quick action tokens ---------------------------------------------------
 
 
-async def create_quick_action_token(user_id: int) -> str:
+async def get_or_create_quick_action_token(user_id: int) -> str:
+    """Return the user's existing quick-action token, creating one only on first use.
+
+    The token must stay STABLE: it is embedded in the user's iOS Shortcut URL.
+    Regenerating it on every Mini App open silently broke Action Button /
+    Back Tap shortcuts configured earlier."""
+    async with _connect() as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            "SELECT token FROM quick_action_tokens WHERE user_id = ?", (user_id,)
+        )
+        row = await cursor.fetchone()
+        if row:
+            return str(row["token"])
     token = secrets.token_urlsafe(24)
     async with _connect() as db:
         db.row_factory = aiosqlite.Row
@@ -305,6 +318,11 @@ async def create_quick_action_token(user_id: int) -> str:
         await db.execute("INSERT INTO quick_action_tokens (token, user_id) VALUES (?, ?)", (token, user_id))
         await db.commit()
     return token
+
+
+# Keep the old name as a thin alias so any other callers keep working.
+async def create_quick_action_token(user_id: int) -> str:
+    return await get_or_create_quick_action_token(user_id)
 
 
 async def get_token_user(token: str) -> int | None:

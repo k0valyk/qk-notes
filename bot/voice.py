@@ -55,6 +55,12 @@ async def transcribe(bot: Bot, file_id: str, language: str | None = None) -> str
     lang = whisper_lang(language)
     if lang:
         kwargs["language"] = lang
+    # Ask Whisper to restore punctuation/capitalization so the saved note
+    # reads cleanly instead of one long lowercase stream of words.
+    kwargs["prompt"] = (
+        "Transcribe the speech exactly. Add correct punctuation marks and "
+        "capitalization. Keep the original language. Output only the final text."
+    )
     transcription = await groq_client.audio.transcriptions.create(**kwargs)
     return (transcription.text or "").strip()
 

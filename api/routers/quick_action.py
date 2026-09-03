@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 
 from api.auth import get_current_user
 from config import settings
-from db import create_quick_action_token, get_token_user, log_usage, upsert_user
+from db import get_or_create_quick_action_token, get_token_user, log_usage, upsert_user
 
 logger = logging.getLogger("qk_notes.quick_action")
 
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api/quick-action", tags=["quick-action"])
 
 @router.get("/token")
 async def get_token(user: dict = Depends(get_current_user)):
-    token = await create_quick_action_token(user["id"])
+    token = await get_or_create_quick_action_token(user["id"])
     base = settings.webapp_url.split("?")[0].replace("/webapp/", "").replace("/webapp", "")
     return {
         "token": token,
@@ -57,6 +57,10 @@ async def quick_action(request: Request, audio: UploadFile | None = File(None)):
             wlang = whisper_lang(lang)
             if wlang:
                 kwargs["language"] = wlang
+            kwargs["prompt"] = (
+                "Transcribe the speech exactly. Add correct punctuation marks and "
+                "capitalization. Keep the original language. Output only the final text."
+            )
             transcription = await groq_client.audio.transcriptions.create(**kwargs)
             text = (transcription.text or "").strip()
     if not text:
